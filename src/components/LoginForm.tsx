@@ -41,7 +41,7 @@ export function LoginForm() {
             <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
               🛒
             </div>
-            <span className="text-xl font-bold">Inventory</span>
+            <span className="text-xl font-bold">Inventory MS</span>
           </div>
         </div>
 
@@ -71,7 +71,7 @@ export function LoginForm() {
         {/* Header - Same as dashboard */}
         <div className="h-16 bg-gray-100 border-b border-gray-200 flex items-center justify-between px-6">
           <div className="flex items-center">
-            <h1 className="text-xl font-bold text-gray-800">Zylker</h1>
+            <h1 className="text-xl font-bold text-gray-800">Login</h1>
           </div>
           <div className="flex items-center space-x-4">
             <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">

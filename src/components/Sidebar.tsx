@@ -28,7 +28,7 @@ export function Sidebar() {
               🛒
             </div>
             {!sidebarCollapsed && (
-              <span className="text-xl font-bold">Inventory</span>
+              <span className="text-xl font-bold">Inventory MS</span>
             )}
           </div>
           <button
@@ -73,13 +73,6 @@ export function Sidebar() {
                   {!sidebarCollapsed && (
                     <>
                       <span className="font-medium">{item.label}</span>
-                      {/* Yellow tick for highlighted items */}
-                      {(item.id === "dashboard" ||
-                        item.id === "inventory" ||
-                        item.id === "sales" ||
-                        item.id === "reports") && (
-                        <span className="ml-auto text-yellow-400">✓</span>
-                      )}
                     </>
                   )}
                 </Link>
