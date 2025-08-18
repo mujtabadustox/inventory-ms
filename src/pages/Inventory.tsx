@@ -1,17 +1,50 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { InventoryList } from "../components/InventoryList";
+import { InventoryForm } from "../components/InventoryForm";
+import type { InventoryItem } from "../data/dummyInventory";
+import { dummyInventoryItems } from "../data/dummyInventory";
+
+// Define the form interface locally
+interface AddEditItemForm {
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+  pictures: string[];
+  category: string;
+}
 
 export function Inventory() {
+  const navigate = useNavigate();
+  const [items, setItems] = useState<InventoryItem[]>(dummyInventoryItems);
+
+  const handleAddItem = async (formData: AddEditItemForm) => {
+    // This function is no longer needed since we're not editing here
+    console.log('Add item functionality moved to AddItem page');
+  };
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Page Header */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            Inventory Management
-          </h1>
-          <p className="text-gray-600">
-            Manage your product inventory, stock levels, and item details
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                Inventory Management
+              </h1>
+              <p className="text-gray-600">
+                Manage your product inventory, stock levels, and item details
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/inventory/add')}
+              className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+            >
+              + Add New Item
+            </button>
+          </div>
         </div>
 
         {/* Inventory Stats */}
@@ -23,7 +56,7 @@ export function Inventory() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Items</p>
-                <p className="text-2xl font-bold text-gray-900">1,247</p>
+                <p className="text-2xl font-bold text-gray-900">{items.length}</p>
               </div>
             </div>
           </div>
@@ -35,7 +68,9 @@ export function Inventory() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">In Stock</p>
-                <p className="text-2xl font-bold text-gray-900">1,089</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {items.filter(item => item.stock > 20).length}
+                </p>
               </div>
             </div>
           </div>
@@ -47,7 +82,9 @@ export function Inventory() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Low Stock</p>
-                <p className="text-2xl font-bold text-gray-900">23</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {items.filter(item => item.stock <= 20 && item.stock > 5).length}
+                </p>
               </div>
             </div>
           </div>
@@ -59,82 +96,20 @@ export function Inventory() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Categories</p>
-                <p className="text-2xl font-bold text-gray-900">15</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {new Set(items.map(item => item.category)).size}
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Recent Items */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800">
-              Recent Inventory Items
-            </h2>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              {[
-                {
-                  name: "Wireless Bluetooth Headphones",
-                  sku: "WH-001",
-                  stock: 45,
-                  category: "Electronics",
-                },
-                {
-                  name: "Organic Cotton T-Shirt",
-                  sku: "TS-002",
-                  stock: 128,
-                  category: "Clothing",
-                },
-                {
-                  name: "Stainless Steel Water Bottle",
-                  sku: "WB-003",
-                  stock: 67,
-                  category: "Home & Garden",
-                },
-                {
-                  name: "LED Desk Lamp",
-                  sku: "DL-004",
-                  stock: 12,
-                  category: "Electronics",
-                },
-                {
-                  name: "Yoga Mat Premium",
-                  sku: "YM-005",
-                  stock: 89,
-                  category: "Sports",
-                },
-              ].map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <span className="text-blue-600 font-semibold">
-                        {item.sku.split("-")[0]}
-                      </span>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">{item.name}</h3>
-                      <p className="text-sm text-gray-500">
-                        SKU: {item.sku} • {item.category}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">
-                      {item.stock} units
-                    </p>
-                    <p className="text-sm text-gray-500">in stock</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        {/* Inventory List */}
+        <InventoryList items={items} />
       </div>
     </div>
   );
 }
+
+
+

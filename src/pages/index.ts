@@ -1,5 +1,8 @@
 export { Dashboard } from "./Dashboard";
 export { Inventory } from "./Inventory";
-export { Sales } from "./Sales";
-export { Purchases } from "./Purchases";
+export { AddItem } from "./AddItem";
+export { PurchaseOrders } from "./PurchaseOrders";
+export { SaleOrders } from "./SaleOrders";
+export { CreatePurchaseOrder } from "./CreatePurchaseOrder";
+export { CreateSaleOrder } from "./CreateSaleOrder";
 export { Reports } from "./Reports";

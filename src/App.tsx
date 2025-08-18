@@ -13,9 +13,19 @@ const App = () => {
           <Route path="/" element={<Layout />} />
           <Route path="/dashboard" element={<Layout />} />
           <Route path="/inventory" element={<Layout />} />
-          <Route path="/sales" element={<Layout />} />
-          <Route path="/purchases" element={<Layout />} />
+          <Route path="/inventory/add" element={<Layout />} />
+          <Route path="/inventory/:id" element={<Layout />} />
+          <Route path="/inventory/:id/edit" element={<Layout />} />
+          <Route path="/orders/purchase" element={<Layout />} />
+          <Route path="/orders/sales" element={<Layout />} />
+          <Route path="/orders/purchase/create" element={<Layout />} />
+          <Route path="/orders/sales/create" element={<Layout />} />
+          <Route path="/orders/purchase/:id" element={<Layout />} />
+          <Route path="/orders/sales/:id" element={<Layout />} />
+          <Route path="/orders/purchase/:id/edit" element={<Layout />} />
+          <Route path="/orders/sales/:id/edit" element={<Layout />} />
           <Route path="/reports" element={<Layout />} />
+          <Route path="/notifications" element={<Layout />} />
           <Route path="/signup" element={<SignupForm />} />
         </Routes>
       </BrowserRouter>

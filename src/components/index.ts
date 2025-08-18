@@ -1,7 +1,8 @@
-export { Sidebar } from "./Sidebar";
 export { Header } from "./Header";
-export { NotificationToast } from "./NotificationToast";
+export { Sidebar } from "./Sidebar";
 export { LoginForm } from "./LoginForm";
 export { SignupForm } from "./SignupForm";
-export { InventoryExample } from "./InventoryExample";
-export { DevTools } from "./ReactQueryDevtools";
+export { NotificationToast } from "./NotificationToast";
+export { ReactQueryDevtools as DevTools } from "./ReactQueryDevtools";
+export { InventoryForm } from "./InventoryForm";
+export { InventoryList } from "./InventoryList";
