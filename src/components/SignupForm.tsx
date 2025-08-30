@@ -1,14 +1,12 @@
 import React, { useState } from "react";
 import { useSignup } from "../hooks/useAuth";
 import { useAppStore } from "../stores/appStore";
+import { Link } from "react-router-dom";
 
 export function SignupForm() {
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
     email: "",
     password: "",
-    confirmPassword: "",
   });
   const [showLogin, setShowLogin] = useState(false);
   const signupMutation = useSignup();
@@ -17,19 +15,8 @@ export function SignupForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (formData.password !== formData.confirmPassword) {
-      addNotification({
-        type: "error",
-        title: "Password Mismatch",
-        message: "Passwords do not match",
-      });
-      return;
-    }
-
     signupMutation.mutate(
       {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
         email: formData.email,
         password: formData.password,
       },
@@ -284,46 +271,6 @@ export function SignupForm() {
               </div>
 
               <form className="space-y-6" onSubmit={handleSubmit}>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      htmlFor="firstName"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      First Name
-                    </label>
-                    <input
-                      type="text"
-                      id="firstName"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="First name"
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="lastName"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      id="lastName"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Last name"
-                    />
-                  </div>
-                </div>
-
                 <div>
                   <label
                     htmlFor="email"
@@ -359,25 +306,6 @@ export function SignupForm() {
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Create a password"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="confirmPassword"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Confirm Password
-                  </label>
-                  <input
-                    type="password"
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Confirm your password"
                   />
                 </div>
 
@@ -419,12 +347,12 @@ export function SignupForm() {
               <div className="mt-6 text-center">
                 <p className="text-sm text-gray-600">
                   Already have an account?{" "}
-                  <button
-                    onClick={() => setShowLogin(true)}
+                  <Link
+                    to="/login"
                     className="text-blue-600 hover:text-blue-500 font-medium"
                   >
                     Sign in
-                  </button>
+                  </Link>
                 </p>
               </div>
 

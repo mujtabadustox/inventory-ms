@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useLogin } from "../hooks/useAuth";
 import { useAppStore } from "../stores/appStore";
+import { Link } from "react-router-dom";
 
 export function LoginForm() {
   const [credentials, setCredentials] = useState({
@@ -171,12 +172,12 @@ export function LoginForm() {
                     </label>
                   </div>
                   <div className="text-sm">
-                    <a
-                      href="#"
+                    <Link
+                      to="/forgot-password"
                       className="font-medium text-blue-600 hover:text-blue-500"
                     >
                       Forgot your password?
-                    </a>
+                    </Link>
                   </div>
                 </div>
 
@@ -219,12 +220,12 @@ export function LoginForm() {
                 <div className="text-center">
                   <p className="text-sm text-gray-600">
                     Don't have an account?{" "}
-                    <button
-                      onClick={() => (window.location.href = "/signup")}
+                    <Link
+                      to="/signup"
                       className="font-medium text-blue-600 hover:text-blue-500"
                     >
                       Sign up
-                    </button>
+                    </Link>
                   </p>
                 </div>
               </form>

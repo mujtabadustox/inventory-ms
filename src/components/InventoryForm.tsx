@@ -1,90 +1,100 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import type { InventoryItem } from '../data/dummyInventory';
-import { categories } from '../data/dummyInventory';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import type { InventoryItem } from "../services/api";
+import { INVENTORY_CATEGORIES } from "../services/api";
 
-// Define the form interface locally
+// Define the form interface to match API payload
 interface AddEditItemForm {
   name: string;
   description: string;
+  quantity: number;
   price: number;
-  stock: number;
-  pictures: string[];
+  threshold: number;
   category: string;
 }
 
 interface InventoryFormProps {
   item?: InventoryItem;
-  mode: 'add' | 'edit';
+  mode: "add" | "edit";
   onSubmit: (data: AddEditItemForm) => void;
   isLoading?: boolean;
   backUrl?: string;
 }
 
-export function InventoryForm({ item, mode, onSubmit, isLoading = false, backUrl }: InventoryFormProps) {
+export function InventoryForm({
+  item,
+  mode,
+  onSubmit,
+  isLoading = false,
+  backUrl,
+}: InventoryFormProps) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<AddEditItemForm>({
-    name: '',
-    description: '',
+    name: "",
+    description: "",
+    quantity: 0,
     price: 0,
-    stock: 0,
-    pictures: [''],
-    category: ''
+    threshold: 0,
+    category: "",
+  });
+
+  // Track input values as strings to allow clearing
+  const [inputValues, setInputValues] = useState({
+    quantity: "0",
+    price: "0",
+    threshold: "0",
   });
 
   useEffect(() => {
-    if (item && mode === 'edit') {
+    if (item && mode === "edit") {
       setFormData({
         name: item.name,
         description: item.description,
+        quantity: item.quantity,
         price: item.price,
-        stock: item.stock,
-        pictures: item.pictures.length > 0 ? item.pictures : [''],
-        category: item.category
+        threshold: item.threshold,
+        category: item.category,
+      });
+      setInputValues({
+        quantity: item.quantity.toString(),
+        price: item.price.toString(),
+        threshold: item.threshold.toString(),
       });
     }
   }, [item, mode]);
 
-  const handleInputChange = (field: keyof AddEditItemForm, value: string | number) => {
-    setFormData(prev => ({
+  const handleInputChange = (
+    field: keyof AddEditItemForm,
+    value: string | number
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
-  const handlePictureChange = (index: number, value: string) => {
-    const newPictures = [...formData.pictures];
-    newPictures[index] = value;
-    setFormData(prev => ({
+  const handleNumberInputChange = (
+    field: keyof typeof inputValues,
+    value: string
+  ) => {
+    setInputValues((prev) => ({
       ...prev,
-      pictures: newPictures
+      [field]: value,
     }));
-  };
-
-  const addPictureField = () => {
-    setFormData(prev => ({
-      ...prev,
-      pictures: [...prev.pictures, '']
-    }));
-  };
-
-  const removePictureField = (index: number) => {
-    if (formData.pictures.length > 1) {
-      const newPictures = formData.pictures.filter((_, i) => i !== index);
-      setFormData(prev => ({
-        ...prev,
-        pictures: newPictures
-      }));
-    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanPictures = formData.pictures.filter(pic => pic.trim() !== '');
-    onSubmit({
+
+    // Convert string inputs to numbers for submission
+    const submitData = {
       ...formData,
-      pictures: cleanPictures.length > 0 ? cleanPictures : ['']
-    });
+      quantity: parseFloat(inputValues.quantity) || 0,
+      price: parseFloat(inputValues.price) || 0,
+      threshold: parseFloat(inputValues.threshold) || 0,
+    };
+
+    onSubmit(submitData);
   };
 
   return (
@@ -104,13 +114,12 @@ export function InventoryForm({ item, mode, onSubmit, isLoading = false, backUrl
 
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          {mode === 'add' ? 'Add New Item' : 'Edit Item'}
+          {mode === "add" ? "Add New Item" : "Edit Item"}
         </h1>
         <p className="text-gray-600">
-          {mode === 'add' 
-            ? 'Fill in the details below to add a new inventory item'
-            : 'Update the item information below'
-          }
+          {mode === "add"
+            ? "Fill in the details below to add a new inventory item"
+            : "Update the item information below"}
         </p>
       </div>
 
@@ -118,14 +127,17 @@ export function InventoryForm({ item, mode, onSubmit, isLoading = false, backUrl
         {/* Basic Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Item Name *
             </label>
             <input
               type="text"
               id="name"
               value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
+              onChange={(e) => handleInputChange("name", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
               placeholder="Enter item name"
               required
@@ -133,32 +145,40 @@ export function InventoryForm({ item, mode, onSubmit, isLoading = false, backUrl
           </div>
 
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="category"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Category *
             </label>
             <select
               id="category"
               value={formData.category}
-              onChange={(e) => handleInputChange('category', e.target.value)}
+              onChange={(e) => handleInputChange("category", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
               required
             >
               <option value="">Select a category</option>
-              {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
+              {INVENTORY_CATEGORIES.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
               ))}
             </select>
           </div>
         </div>
 
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="description"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             Description *
           </label>
           <textarea
             id="description"
             value={formData.description}
-            onChange={(e) => handleInputChange('description', e.target.value)}
+            onChange={(e) => handleInputChange("description", e.target.value)}
             rows={4}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
             placeholder="Enter item description"
@@ -166,16 +186,19 @@ export function InventoryForm({ item, mode, onSubmit, isLoading = false, backUrl
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="price"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Price ($) *
             </label>
             <input
               type="number"
               id="price"
-              value={formData.price}
-              onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
+              value={inputValues.price}
+              onChange={(e) => handleNumberInputChange("price", e.target.value)}
               step="0.01"
               min="0"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
@@ -185,55 +208,48 @@ export function InventoryForm({ item, mode, onSubmit, isLoading = false, backUrl
           </div>
 
           <div>
-            <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-2">
-              Stock Quantity *
+            <label
+              htmlFor="quantity"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Quantity *
             </label>
             <input
               type="number"
-              id="stock"
-              value={formData.stock}
-              onChange={(e) => handleInputChange('stock', parseInt(e.target.value) || 0)}
+              id="quantity"
+              value={inputValues.quantity}
+              onChange={(e) =>
+                handleNumberInputChange("quantity", e.target.value)
+              }
               min="0"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
               placeholder="0"
               required
             />
           </div>
-        </div>
 
-        {/* Pictures */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Picture URLs
-          </label>
-          <div className="space-y-3">
-            {formData.pictures.map((picture, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <input
-                  type="url"
-                  value={picture}
-                  onChange={(e) => handlePictureChange(index, e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="https://example.com/image.jpg"
-                />
-                {formData.pictures.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removePictureField(index)}
-                    className="px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={addPictureField}
-              className="px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors border border-blue-200"
+          <div>
+            <label
+              htmlFor="threshold"
+              className="block text-sm font-medium text-gray-700 mb-2"
             >
-              + Add Another Picture
-            </button>
+              Threshold *
+            </label>
+            <input
+              type="number"
+              id="threshold"
+              value={inputValues.threshold}
+              onChange={(e) =>
+                handleNumberInputChange("threshold", e.target.value)
+              }
+              min="0"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              placeholder="0"
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Alert when quantity falls below this number
+            </p>
           </div>
         </div>
 
@@ -241,17 +257,21 @@ export function InventoryForm({ item, mode, onSubmit, isLoading = false, backUrl
         <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
           <button
             type="button"
-            onClick={() => navigate(backUrl || '/inventory')}
+            onClick={() => navigate(backUrl || "/inventory")}
             className="px-6 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
           >
-            {mode === 'edit' ? 'Back to Details' : 'Cancel'}
+            {mode === "edit" ? "Back to Details" : "Cancel"}
           </button>
           <button
             type="submit"
             disabled={isLoading}
             className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isLoading ? 'Saving...' : mode === 'add' ? 'Add Item' : 'Update Item'}
+            {isLoading
+              ? "Saving..."
+              : mode === "add"
+              ? "Add Item"
+              : "Update Item"}
           </button>
         </div>
       </form>
