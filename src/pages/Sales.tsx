@@ -2,7 +2,7 @@ import React from "react";
 
 export function Sales() {
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Page Header */}
         <div className="bg-white rounded-lg shadow p-6">

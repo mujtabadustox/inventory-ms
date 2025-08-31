@@ -4,6 +4,7 @@ import {
   useMyNotifications,
   useUpdateNotification,
 } from "../hooks/useNotifications";
+import { Select, type SelectOption } from "../components/ui/Select";
 import { toast } from "sonner";
 
 // Local interface for filters
@@ -48,7 +49,7 @@ export function Notifications() {
 
   // Filter notifications based on current filters
   const filteredNotifications = useMemo(() => {
-    return notifications.filter((notification) => {
+    let filtered = notifications.filter((notification) => {
       const matchesSearch =
         filters.search === "" ||
         notification.description
@@ -67,6 +68,16 @@ export function Notifications() {
 
       return matchesSearch && matchesType && matchesStatus;
     });
+
+    // Sort by created_at in descending order (latest first)
+    filtered.sort((a, b) => {
+      if (!a.created_at || !b.created_at) return 0;
+      return (
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    });
+
+    return filtered;
   }, [notifications, filters]);
 
   const handleNotificationClick = async (notification: any) => {
@@ -165,24 +176,58 @@ export function Notifications() {
   };
 
   const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    // Parse the UTC timestamp and convert to local time
+    const utcDate = new Date(timestamp + "Z"); // Add 'Z' to ensure UTC parsing
+    const localDate = new Date(
+      utcDate.getTime() - utcDate.getTimezoneOffset() * 60000
+    );
 
-    if (minutes < 1) return "Just now";
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 7) return `${days}d ago`;
-    return date.toLocaleDateString();
+    // Format as date and time
+    return localDate.toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const notificationTypeOptions: SelectOption[] = [
+    { value: "all", label: "All Types" },
+    { value: "low_stock", label: "Low Stock" },
+    { value: "out_of_stock", label: "Out of Stock" },
+    { value: "order_created", label: "Order Created" },
+    { value: "order_updated", label: "Order Updated" },
+    { value: "order_cancelled", label: "Order Cancelled" },
+  ];
+
+  const statusOptions: SelectOption[] = [
+    { value: "all", label: "All Status" },
+    { value: "unread", label: "Unread" },
+    { value: "read", label: "Read" },
+  ];
+
+  const handleTypeChange = (value: string) => {
+    if (value === "all") {
+      setFilters((prev) => ({ ...prev, notification_type: "" }));
+    } else {
+      setFilters((prev) => ({ ...prev, notification_type: value }));
+    }
+  };
+
+  const handleStatusChange = (value: string) => {
+    if (value === "all") {
+      setFilters((prev) => ({ ...prev, status: "" }));
+    } else {
+      setFilters((prev) => ({ ...prev, status: value }));
+    }
   };
 
   // Loading state
   if (isLoading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-6 bg-gray-50">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="animate-pulse">
@@ -198,7 +243,7 @@ export function Notifications() {
   // Error state
   if (error) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-6 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="bg-white rounded-lg shadow p-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">
@@ -220,7 +265,7 @@ export function Notifications() {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Page Header */}
         <div className="bg-white rounded-lg shadow p-6">
@@ -315,70 +360,28 @@ export function Notifications() {
         {/* Filters */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Filters</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Search */}
-            <div>
-              <label
-                htmlFor="search"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Search
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notification Type
               </label>
-              <input
-                type="text"
-                id="search"
-                placeholder="Search notifications..."
-                value={filters.search}
-                onChange={(e) => handleFilterChange("search", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              <Select
+                value={filters.notification_type || "all"}
+                onValueChange={handleTypeChange}
+                options={notificationTypeOptions}
+                placeholder="Select type"
               />
             </div>
-
-            {/* Type Filter */}
-            <div>
-              <label
-                htmlFor="type"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Type
-              </label>
-              <select
-                id="type"
-                value={filters.notification_type}
-                onChange={(e) =>
-                  handleFilterChange("notification_type", e.target.value)
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">All Types</option>
-                {Array.from(
-                  new Set(notifications.map((n) => n.notification_type))
-                ).map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Status Filter */}
-            <div>
-              <label
-                htmlFor="status"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Status
               </label>
-              <select
-                id="status"
-                value={filters.status}
-                onChange={(e) => handleFilterChange("status", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">All Status</option>
-                <option value="unread">Unread</option>
-                <option value="read">Read</option>
-              </select>
+              <Select
+                value={filters.status || "all"}
+                onValueChange={handleStatusChange}
+                options={statusOptions}
+                placeholder="Select status"
+              />
             </div>
           </div>
 

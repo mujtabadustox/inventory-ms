@@ -80,7 +80,7 @@ export function Dashboard() {
     topSellingLoading
   ) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-6 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -92,22 +92,8 @@ export function Dashboard() {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Welcome Message */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex justify-between items-start">
-            <div className="text-center">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                Welcome back, {user?.name || "User"}! 👋
-              </h1>
-              <p className="text-gray-600 text-lg">
-                Here's your inventory overview and key metrics for today.
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Key Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Total Revenue */}
@@ -426,11 +412,6 @@ export function Dashboard() {
                 <span className="text-green-600 group-hover:text-green-800 text-2xl">
                   →
                 </span>
-                {metrics.saleOrders.total > 0 && (
-                  <div className="text-green-600 text-sm font-medium">
-                    {metrics.saleOrders.total}
-                  </div>
-                )}
               </div>
             </button>
 
@@ -459,11 +440,6 @@ export function Dashboard() {
                 <span className="text-blue-600 group-hover:text-blue-800 text-2xl">
                   →
                 </span>
-                {metrics.purchaseOrders.total > 0 && (
-                  <div className="text-blue-600 text-sm font-medium">
-                    {metrics.purchaseOrders.total}
-                  </div>
-                )}
               </div>
             </button>
 
@@ -492,11 +468,6 @@ export function Dashboard() {
                 <span className="text-purple-600 group-hover:text-purple-800 text-2xl">
                   →
                 </span>
-                {metrics.inventory.totalItems > 0 && (
-                  <div className="text-purple-600 text-sm font-medium">
-                    {metrics.inventory.totalItems}
-                  </div>
-                )}
               </div>
             </button>
           </div>

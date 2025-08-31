@@ -21,7 +21,7 @@ export function InventoryDetails() {
 
   if (isLoading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-6 bg-gray-50">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="animate-pulse">
@@ -36,7 +36,7 @@ export function InventoryDetails() {
 
   if (error || !item) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-6 bg-gray-50">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow p-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">
@@ -89,7 +89,7 @@ export function InventoryDetails() {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

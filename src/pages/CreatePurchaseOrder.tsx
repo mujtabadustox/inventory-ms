@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCreatePurchaseOrder } from "../hooks/usePurchaseOrders";
 import { useInventoryItems } from "../hooks/useInventory";
+import { Select, type SelectOption } from "../components/ui/Select";
 import type { CreatePurchaseOrderRequest } from "../services/api";
 import { toast } from "sonner";
 
@@ -24,8 +25,9 @@ export function CreatePurchaseOrder() {
   });
 
   const [orderItems, setOrderItems] = useState<PurchaseOrderItem[]>([]);
-  const [selectedItemId, setSelectedItemId] = useState<number | "">("");
+  const [selectedItemId, setSelectedItemId] = useState<string>("");
   const [itemQuantity, setItemQuantity] = useState<string>("1");
+  const [selectedItem, setSelectedItem] = useState<any>(null);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -43,7 +45,7 @@ export function CreatePurchaseOrder() {
 
     // Check if item already exists in order
     const existingItemIndex = orderItems.findIndex(
-      (item) => item.item_id === selectedItemId
+      (item) => item.item_id === Number(selectedItemId)
     );
 
     if (existingItemIndex !== -1) {
@@ -56,7 +58,7 @@ export function CreatePurchaseOrder() {
       // Add new item
       setOrderItems((prev) => [
         ...prev,
-        { item_id: selectedItemId, quantity: itemQuantity },
+        { item_id: Number(selectedItemId), quantity: itemQuantity },
       ]);
       toast.success("Item added to order");
     }
@@ -72,11 +74,7 @@ export function CreatePurchaseOrder() {
   };
 
   const handleUpdateItemQuantity = (index: number, newQuantity: string) => {
-    if (newQuantity === "" || Number(newQuantity) <= 0) {
-      handleRemoveItem(index);
-      return;
-    }
-
+    // Allow empty quantities and 0, don't auto-remove
     setOrderItems((prev) =>
       prev.map((item, i) =>
         i === index ? { ...item, quantity: newQuantity } : item
@@ -145,9 +143,26 @@ export function CreatePurchaseOrder() {
     }).format(amount);
   };
 
+  const itemOptions: SelectOption[] = inventoryItems.map((item) => ({
+    value: item.id.toString(),
+    label: item.name,
+  }));
+
+  const handleItemSelect = (value: string) => {
+    setSelectedItemId(value);
+    if (value) {
+      const item = inventoryItems.find((item) => item.id.toString() === value);
+      if (item) {
+        setSelectedItem(item);
+      }
+    } else {
+      setSelectedItem(null);
+    }
+  };
+
   if (inventoryLoading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-6 bg-gray-50">
         <div className="max-w-4xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -159,7 +174,7 @@ export function CreatePurchaseOrder() {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -274,30 +289,21 @@ export function CreatePurchaseOrder() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div>
-                <label
-                  htmlFor="item_select"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Select Item
                 </label>
-                <select
-                  id="item_select"
+                <Select
                   value={selectedItemId}
-                  onChange={(e) =>
-                    setSelectedItemId(
-                      e.target.value ? Number(e.target.value) : ""
-                    )
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Choose an item...</option>
-                  {inventoryItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name} - ${item.price} (Stock: {item.quantity})
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={handleItemSelect}
+                  options={itemOptions}
+                  placeholder="Choose an item"
+                />
+                {selectedItemId && (
+                  <div className="mt-2 text-sm text-gray-600">
+                    Price: ${getItemPrice(Number(selectedItemId)).toFixed(2)}
+                  </div>
+                )}
               </div>
 
               <div>

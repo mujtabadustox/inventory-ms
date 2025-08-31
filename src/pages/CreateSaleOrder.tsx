@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCreateSaleOrder, useInventoryItems } from "../hooks";
+import { useCreateSaleOrder } from "../hooks/useSaleOrders";
+import { useInventoryItems } from "../hooks/useInventory";
+import { Select, type SelectOption } from "../components/ui/Select";
 import type { CreateSaleOrderRequest } from "../services/api";
 import { toast } from "sonner";
 
@@ -24,7 +26,7 @@ export function CreateSaleOrder() {
   });
 
   const [orderItems, setOrderItems] = useState<SaleOrderItem[]>([]);
-  const [selectedItemId, setSelectedItemId] = useState<number | "">("");
+  const [selectedItemId, setSelectedItemId] = useState<string>("");
   const [itemQuantity, setItemQuantity] = useState<number>(1);
   const [itemPrice, setItemPrice] = useState<number>(0);
 
@@ -64,7 +66,7 @@ export function CreateSaleOrder() {
 
     // Get the selected inventory item to check minimum price and stock
     const selectedInventoryItem = inventoryItems.find(
-      (item) => item.id === selectedItemId
+      (item) => item.id === parseInt(selectedItemId, 10)
     );
     if (!selectedInventoryItem) {
       toast.error("Selected item not found");
@@ -89,7 +91,7 @@ export function CreateSaleOrder() {
 
     // Check if item already exists in order
     const existingItemIndex = orderItems.findIndex(
-      (item) => item.item_id === selectedItemId
+      (item) => item.item_id === parseInt(selectedItemId, 10)
     );
 
     if (existingItemIndex !== -1) {
@@ -103,7 +105,11 @@ export function CreateSaleOrder() {
       // Add new item
       setOrderItems((prev) => [
         ...prev,
-        { item_id: selectedItemId, quantity: quantity, sale_price: price },
+        {
+          item_id: parseInt(selectedItemId, 10),
+          quantity: quantity,
+          sale_price: price,
+        },
       ]);
       toast.success("Item added to order");
     }
@@ -117,7 +123,7 @@ export function CreateSaleOrder() {
   };
 
   const handleItemSelection = (itemId: number) => {
-    setSelectedItemId(itemId);
+    setSelectedItemId(itemId.toString());
     // Set the default price to the inventory price when item is selected
     const selectedItem = inventoryItems.find((item) => item.id === itemId);
     if (selectedItem) {
@@ -194,9 +200,26 @@ export function CreateSaleOrder() {
     }).format(amount);
   };
 
+  const itemOptions = inventoryItems.map((item) => ({
+    value: item.id.toString(),
+    label: item.name,
+  }));
+
+  const handleItemSelect = (value: string) => {
+    setSelectedItemId(value);
+    if (value) {
+      const item = inventoryItems.find((item) => item.id.toString() === value);
+      if (item) {
+        // setSelectedItem(item); // This line was removed as per the edit hint
+      }
+    } else {
+      // setSelectedItem(null); // This line was removed as per the edit hint
+    }
+  };
+
   if (inventoryLoading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-6 bg-gray-50">
         <div className="max-w-4xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -208,7 +231,7 @@ export function CreateSaleOrder() {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -323,30 +346,16 @@ export function CreateSaleOrder() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div>
-                <label
-                  htmlFor="item_select"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Select Item
                 </label>
-                <select
-                  id="item_select"
+                <Select
                   value={selectedItemId}
-                  onChange={(e) =>
-                    handleItemSelection(
-                      e.target.value ? Number(e.target.value) : 0
-                    )
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Choose an item...</option>
-                  {inventoryItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name} - ${item.price} (Stock: {item.quantity})
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={handleItemSelect}
+                  options={itemOptions}
+                  placeholder="Choose an item"
+                />
               </div>
 
               <div>
@@ -368,8 +377,9 @@ export function CreateSaleOrder() {
                 {selectedItemId && (
                   <p className="mt-1 text-sm text-gray-500">
                     Available stock:{" "}
-                    {inventoryItems.find((item) => item.id === selectedItemId)
-                      ?.quantity || 0}
+                    {inventoryItems.find(
+                      (item) => item.id === parseInt(selectedItemId, 10)
+                    )?.quantity || 0}
                   </p>
                 )}
               </div>
@@ -394,8 +404,9 @@ export function CreateSaleOrder() {
                 {selectedItemId && (
                   <p className="mt-1 text-sm text-gray-500">
                     Minimum price: $
-                    {inventoryItems.find((item) => item.id === selectedItemId)
-                      ?.price || 0}
+                    {inventoryItems.find(
+                      (item) => item.id === parseInt(selectedItemId, 10)
+                    )?.price || 0}
                   </p>
                 )}
               </div>

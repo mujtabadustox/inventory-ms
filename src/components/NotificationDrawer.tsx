@@ -6,6 +6,7 @@ import {
   useDeleteNotification,
 } from "../hooks/useNotifications";
 import type { Notification } from "../services/api";
+import { Select, type SelectOption } from "./ui/Select";
 
 interface NotificationDrawerProps {
   isOpen: boolean;
@@ -24,8 +25,8 @@ export function NotificationDrawer({
 }: NotificationDrawerProps) {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<NotificationFilters>({
-    type: "",
-    status: "",
+    type: "all",
+    status: "all",
     search: "",
   });
 
@@ -36,7 +37,7 @@ export function NotificationDrawer({
 
   // Filter notifications based on current filters
   const filteredNotifications = useMemo(() => {
-    return notifications.filter((notification) => {
+    let filtered = notifications.filter((notification) => {
       const matchesSearch =
         filters.search === "" ||
         notification.description
@@ -47,12 +48,23 @@ export function NotificationDrawer({
           .includes(filters.search.toLowerCase());
 
       const matchesType =
-        filters.type === "" || notification.notification_type === filters.type;
+        filters.type === "all" ||
+        notification.notification_type === filters.type;
       const matchesStatus =
-        filters.status === "" || notification.status === filters.status;
+        filters.status === "all" || notification.status === filters.status;
 
       return matchesSearch && matchesType && matchesStatus;
     });
+
+    // Sort by created_at in descending order (latest first)
+    filtered.sort((a, b) => {
+      if (!a.created_at || !b.created_at) return 0;
+      return (
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    });
+
+    return filtered;
   }, [notifications, filters]);
 
   const handleNotificationClick = (notification: Notification) => {
@@ -97,14 +109,16 @@ export function NotificationDrawer({
     deleteNotificationMutation.mutate(notificationId);
   };
 
-  const handleFilterChange = (
-    field: keyof NotificationFilters,
-    value: string
-  ) => {
-    setFilters((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  const handleTypeChange = (value: string) => {
+    setFilters((prev) => ({ ...prev, type: value }));
+  };
+
+  const handleStatusChange = (value: string) => {
+    setFilters((prev) => ({ ...prev, status: value }));
+  };
+
+  const handleSearchChange = (value: string) => {
+    setFilters((prev) => ({ ...prev, search: value }));
   };
 
   const getTypeIcon = (type: string) => {
@@ -154,18 +168,21 @@ export function NotificationDrawer({
   };
 
   const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    // Parse the UTC timestamp and convert to local time
+    const utcDate = new Date(timestamp + "Z"); // Add 'Z' to ensure UTC parsing
+    const localDate = new Date(
+      utcDate.getTime() - utcDate.getTimezoneOffset() * 60000
+    );
 
-    if (minutes < 1) return "Just now";
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 7) return `${days}d ago`;
-    return date.toLocaleDateString();
+    // Format as date and time
+    return localDate.toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
   };
 
   // Get unique notification types for filter
@@ -256,34 +273,37 @@ export function NotificationDrawer({
             type="text"
             placeholder="Search notifications..."
             value={filters.search}
-            onChange={(e) => handleFilterChange("search", e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
 
           {/* Type and Status filters */}
           <div className="flex space-x-2">
-            <select
+            <Select
               value={filters.type}
-              onChange={(e) => handleFilterChange("type", e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">All Types</option>
-              {notificationTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type.replace("_", " ").toUpperCase()}
-                </option>
-              ))}
-            </select>
+              onValueChange={handleTypeChange}
+              options={[
+                { value: "all", label: "All Types" },
+                ...notificationTypes.map((type) => ({
+                  value: type,
+                  label: type.replace("_", " ").toUpperCase(),
+                })),
+              ]}
+              placeholder="Select type"
+              className="flex-1"
+            />
 
-            <select
+            <Select
               value={filters.status}
-              onChange={(e) => handleFilterChange("status", e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">All Status</option>
-              <option value="read">Read</option>
-              <option value="unread">Unread</option>
-            </select>
+              onValueChange={handleStatusChange}
+              options={[
+                { value: "all", label: "All Status" },
+                { value: "read", label: "Read" },
+                { value: "unread", label: "Unread" },
+              ]}
+              placeholder="Select status"
+              className="flex-1"
+            />
           </div>
         </div>
 

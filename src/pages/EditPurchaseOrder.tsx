@@ -27,7 +27,7 @@ export function EditPurchaseOrder() {
   // Show loading state while either order or inventory is loading
   if (orderLoading || inventoryLoading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-6 bg-gray-50">
         <div className="max-w-4xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -41,7 +41,7 @@ export function EditPurchaseOrder() {
   // Show error state if order failed to load or doesn't exist
   if (orderError || !order) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-6 bg-gray-50">
         <div className="max-w-4xl mx-auto">
           <div className="text-center py-12">
             <div className="text-red-500 text-6xl mb-4">❌</div>

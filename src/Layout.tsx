@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import { Sidebar } from "./components/Sidebar";
 import { Header } from "./components/Header";
 import { LoginForm } from "./components/LoginForm";
-import { NotificationToast } from "./components/NotificationToast";
 import { Dashboard } from "./pages/Dashboard";
 import { Inventory } from "./pages/Inventory";
 import { AddItem } from "./pages/AddItem";
@@ -128,21 +127,20 @@ const Layout = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
       {/* Sidebar */}
       <Sidebar />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
         <Header />
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto">{renderPageContent()}</main>
+        <main className="flex-1 overflow-y-auto bg-gray-50">
+          {renderPageContent()}
+        </main>
       </div>
-
-      {/* Notification Toast */}
-      <NotificationToast />
     </div>
   );
 };

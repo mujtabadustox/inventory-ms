@@ -134,7 +134,7 @@ export function PurchaseOrders() {
 
   if (isLoading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-6 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -147,7 +147,7 @@ export function PurchaseOrders() {
 
   if (error) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-6 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center py-12">
             <div className="text-red-500 text-6xl mb-4">❌</div>
@@ -162,7 +162,7 @@ export function PurchaseOrders() {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -390,7 +390,7 @@ export function PurchaseOrders() {
                             </span>
                             <span className="text-sm text-gray-800">
                               {order.items.length} item
-                              {order.items.length !== 1 ? "s" : ""}(
+                              {order.items.length !== 1 ? "s" : ""} (
                               {order.items.reduce(
                                 (sum, item) => sum + item.quantity,
                                 0

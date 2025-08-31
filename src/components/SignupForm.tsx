@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useSignup } from "../hooks/useAuth";
-import { useAppStore } from "../stores/appStore";
 import { Link } from "react-router-dom";
 
 export function SignupForm() {
@@ -11,33 +10,14 @@ export function SignupForm() {
   const [showLogin, setShowLogin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const signupMutation = useSignup();
-  const { addNotification } = useAppStore();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    signupMutation.mutate(
-      {
-        email: formData.email,
-        password: formData.password,
-      },
-      {
-        onSuccess: () => {
-          addNotification({
-            type: "success",
-            title: "Account Created",
-            message: "Welcome! Your account has been created successfully.",
-          });
-        },
-        onError: (error: any) => {
-          addNotification({
-            type: "error",
-            title: "Signup Failed",
-            message: error.message || "Failed to create account",
-          });
-        },
-      }
-    );
+    signupMutation.mutate({
+      email: formData.email,
+      password: formData.password,
+    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

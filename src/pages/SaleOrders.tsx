@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSaleOrders, useInventoryItems, useDeleteSaleOrder } from "../hooks";
+import { useSaleOrders } from "../hooks/useSaleOrders";
+import { useInventoryItems } from "../hooks/useInventory";
+import { Select, type SelectOption } from "../components/ui/Select";
+import { useDeleteSaleOrder } from "../hooks";
 import { ConfirmationDialog } from "../components/ConfirmationDialog";
 import { toast } from "sonner";
 import type { InventoryItem } from "../services/api";
@@ -35,6 +38,31 @@ export function SaleOrders() {
     sortBy: "order_date",
     sortOrder: "desc",
   });
+
+  const sortByOptions: SelectOption[] = [
+    { value: "customer_name", label: "Customer Name" },
+    { value: "order_date", label: "Order Date" },
+    { value: "total_amount", label: "Total Amount" },
+  ];
+
+  const sortOrderOptions: SelectOption[] = [
+    { value: "asc", label: "Ascending" },
+    { value: "desc", label: "Descending" },
+  ];
+
+  const handleSortByChange = (value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      sortBy: value as SaleOrderFilters["sortBy"],
+    }));
+  };
+
+  const handleSortOrderChange = (value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      sortOrder: value as SaleOrderFilters["sortOrder"],
+    }));
+  };
 
   // Filter and sort orders
   const filteredAndSortedOrders = useMemo(() => {
@@ -92,15 +120,6 @@ export function SaleOrders() {
     setFilters((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSortChange = (sortBy: SaleOrderFilters["sortBy"]) => {
-    setFilters((prev) => ({
-      ...prev,
-      sortBy,
-      sortOrder:
-        prev.sortBy === sortBy && prev.sortOrder === "asc" ? "desc" : "asc",
-    }));
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -151,7 +170,7 @@ export function SaleOrders() {
 
   if (isLoading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-6 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -164,7 +183,7 @@ export function SaleOrders() {
 
   if (error) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-6 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center py-12">
             <div className="text-red-600 text-xl font-semibold mb-2">
@@ -178,7 +197,7 @@ export function SaleOrders() {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -298,7 +317,7 @@ export function SaleOrders() {
                 id="search"
                 value={filters.search}
                 onChange={(e) => handleFilterChange("search", e.target.value)}
-                placeholder="Order # or Customer..."
+                placeholder="Customer Name"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
             </div>
@@ -342,18 +361,26 @@ export function SaleOrders() {
               >
                 Sort By
               </label>
-              <select
-                id="sortBy"
+              <Select
                 value={filters.sortBy}
-                onChange={(e) =>
-                  handleSortChange(e.target.value as SaleOrderFilters["sortBy"])
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                onValueChange={handleSortByChange}
+                options={sortByOptions}
+                placeholder="Sort by"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="sortOrder"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
-                <option value="order_date">Order Date</option>
-                <option value="customer_name">Customer Name</option>
-                <option value="total_amount">Total Amount</option>
-              </select>
+                Sort Order
+              </label>
+              <Select
+                value={filters.sortOrder}
+                onValueChange={handleSortOrderChange}
+                options={sortOrderOptions}
+                placeholder="Sort order"
+              />
             </div>
           </div>
         </div>
@@ -491,7 +518,7 @@ export function SaleOrders() {
             {!filters.search && !filters.dateFrom && !filters.dateTo && (
               <button
                 onClick={() => navigate("/orders/sales/create")}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
               >
                 Create Your First Sale Order
               </button>

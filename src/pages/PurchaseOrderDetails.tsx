@@ -51,7 +51,7 @@ export function PurchaseOrderDetails() {
 
   if (isLoading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-6 bg-gray-50">
         <div className="max-w-4xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -66,7 +66,7 @@ export function PurchaseOrderDetails() {
 
   if (error || !order) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-6 bg-gray-50">
         <div className="max-w-4xl mx-auto">
           <div className="text-center py-12">
             <div className="text-red-500 text-6xl mb-4">❌</div>
@@ -90,7 +90,7 @@ export function PurchaseOrderDetails() {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Page Header */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

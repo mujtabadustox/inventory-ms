@@ -50,7 +50,7 @@ export function AddItem() {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50">
       <InventoryForm
         item={existingItem}
         mode={isEditMode ? "edit" : "add"}

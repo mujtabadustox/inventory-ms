@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { InventoryItem } from "../services/api";
 import { INVENTORY_CATEGORIES } from "../services/api";
+import { Select, type SelectOption } from "./ui/Select";
 
 // Define the form interface to match API payload
 interface AddEditItemForm {
@@ -88,6 +89,17 @@ export function InventoryForm({
     }));
   };
 
+  const categoryOptions: SelectOption[] = INVENTORY_CATEGORIES.map(
+    (category) => ({
+      value: category.toLowerCase(),
+      label: category,
+    })
+  );
+
+  const handleCategoryChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, category: value }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -150,26 +162,15 @@ export function InventoryForm({
           </div>
 
           <div>
-            <label
-              htmlFor="category"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Category *
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Category
             </label>
-            <select
-              id="category"
+            <Select
               value={formData.category}
-              onChange={(e) => handleInputChange("category", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              required
-            >
-              <option value="">Select a category</option>
-              {INVENTORY_CATEGORIES.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
+              onValueChange={handleCategoryChange}
+              options={categoryOptions}
+              placeholder="Select category"
+            />
           </div>
         </div>
 
@@ -270,7 +271,7 @@ export function InventoryForm({
           <button
             type="submit"
             disabled={isLoading}
-            className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading
               ? "Saving..."

@@ -40,7 +40,7 @@ export function EditInventoryItem() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-6 bg-gray-50">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="animate-pulse">
@@ -56,7 +56,7 @@ export function EditInventoryItem() {
   // Error state
   if (error || !item) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-6 bg-gray-50">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow p-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">
@@ -79,7 +79,7 @@ export function EditInventoryItem() {
 
   // Render the form with item data passed as props
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-gray-50">
       <InventoryForm
         item={item}
         mode="edit"

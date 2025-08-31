@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import type { InventoryItem } from "../services/api";
-import { ConfirmationDialog } from "./ConfirmationDialog";
+import { useInventoryItems } from "../hooks/useInventory";
+import { INVENTORY_CATEGORIES, type InventoryItem } from "../services/api";
+import { Select, type SelectOption } from "./ui/Select";
 
 // Define the filters interface locally
 interface InventoryFilters {
@@ -100,13 +101,107 @@ export function InventoryList({ items }: InventoryListProps) {
     return filters.sortOrder === "asc" ? "↑" : "↓";
   };
 
+  const categoryOptions: SelectOption[] = [
+    { value: "all", label: "All Categories" },
+    ...INVENTORY_CATEGORIES.map((category) => ({
+      value: category.toLowerCase(),
+      label: category,
+    })),
+  ];
+
+  const sortByOptions: SelectOption[] = [
+    { value: "name", label: "Name" },
+    { value: "category", label: "Category" },
+    { value: "quantity", label: "Quantity" },
+    { value: "price", label: "Price" },
+    { value: "created_at", label: "Date Created" },
+  ];
+
+  const sortOrderOptions: SelectOption[] = [
+    { value: "asc", label: "Ascending" },
+    { value: "desc", label: "Descending" },
+  ];
+
+  const handleCategoryChange = (value: string) => {
+    if (value === "all") {
+      setFilters((prev) => ({ ...prev, category: "" }));
+    } else {
+      setFilters((prev) => ({ ...prev, category: value }));
+    }
+  };
+
+  const handleSortByChange = (value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      sortBy: value as InventoryFilters["sortBy"],
+    }));
+  };
+
+  const handleSortOrderChange = (value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      sortOrder: value as InventoryFilters["sortOrder"],
+    }));
+  };
+
   return (
     <div className="space-y-6">
-      {/* Search and Filters */}
+      {/* Filters */}
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Search */}
-          <div>
+        <div className="flex items-end justify-between gap-4">
+          {/* Left side - Dropdowns */}
+          <div className="flex items-end gap-4 flex-1">
+            {/* Category Filter */}
+            <div className="flex-1 min-w-0">
+              <label
+                htmlFor="category"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Category
+              </label>
+              <Select
+                value={filters.category || "all"}
+                onValueChange={handleCategoryChange}
+                options={categoryOptions}
+                placeholder="Select category"
+              />
+            </div>
+
+            {/* Sort By */}
+            <div className="flex-1 min-w-0">
+              <label
+                htmlFor="sortBy"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Sort By
+              </label>
+              <Select
+                value={filters.sortBy}
+                onValueChange={handleSortByChange}
+                placeholder="Select sort field"
+                options={sortByOptions}
+              />
+            </div>
+
+            {/* Sort Order */}
+            <div className="flex-1 min-w-0">
+              <label
+                htmlFor="sortOrder"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Sort Order
+              </label>
+              <Select
+                value={filters.sortOrder}
+                onValueChange={handleSortOrderChange}
+                placeholder="Select sort order"
+                options={sortOrderOptions}
+              />
+            </div>
+          </div>
+
+          {/* Right side - Search */}
+          <div className="flex-shrink-0 w-80">
             <label
               htmlFor="search"
               className="block text-sm font-medium text-gray-700 mb-1"
@@ -121,71 +216,6 @@ export function InventoryList({ items }: InventoryListProps) {
               placeholder="Search items..."
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-          </div>
-
-          {/* Category Filter */}
-          <div>
-            <label
-              htmlFor="category"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Category
-            </label>
-            <select
-              id="category"
-              value={filters.category}
-              onChange={(e) => handleFilterChange("category", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">All Categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Sort By */}
-          <div>
-            <label
-              htmlFor="sortBy"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Sort By
-            </label>
-            <select
-              id="sortBy"
-              value={filters.sortBy}
-              onChange={(e) =>
-                handleSortChange(e.target.value as InventoryFilters["sortBy"])
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="name">Name</option>
-              <option value="price">Price</option>
-              <option value="quantity">Quantity</option>
-              <option value="category">Category</option>
-            </select>
-          </div>
-
-          {/* Sort Order */}
-          <div>
-            <label
-              htmlFor="sortOrder"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Sort Order
-            </label>
-            <select
-              id="sortOrder"
-              value={filters.sortOrder}
-              onChange={(e) => handleFilterChange("sortOrder", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="asc">Ascending</option>
-              <option value="desc">Descending</option>
-            </select>
           </div>
         </div>
       </div>

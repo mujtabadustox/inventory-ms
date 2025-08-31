@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useLogin } from "../hooks/useAuth";
-import { useAppStore } from "../stores/appStore";
 import { Link } from "react-router-dom";
 
 export function LoginForm() {
@@ -11,19 +10,10 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
 
   const loginMutation = useLogin();
-  const { addNotification } = useAppStore();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loginMutation.mutate(credentials, {
-      onSuccess: () => {
-        addNotification({
-          type: "success",
-          title: "Welcome Back!",
-          message: "Successfully logged in to your account",
-        });
-      },
-    });
+    loginMutation.mutate(credentials);
   };
 
   return (
