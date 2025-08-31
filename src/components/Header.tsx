@@ -2,18 +2,18 @@ import React, { useState } from "react";
 import { useAuthStore } from "../stores/authStore";
 import { useLogout } from "../hooks/useAuth";
 import { NotificationDrawer } from "./NotificationDrawer";
-import { getNotificationStats } from "../data/dummyNotifications";
+import { useUnreadNotificationsCount } from "../hooks/useNotifications";
 
 export function Header() {
   const { user } = useAuthStore();
   const logoutMutation = useLogout();
-  const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] = useState(false);
+  const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] =
+    useState(false);
+  const { unreadCount, isLoading } = useUnreadNotificationsCount();
 
   const handleLogout = () => {
     logoutMutation.mutate();
   };
-
-  const stats = getNotificationStats();
 
   return (
     <>
@@ -44,7 +44,7 @@ export function Header() {
 
           {/* Bell icon with notification indicator */}
           <div className="relative">
-            <button 
+            <button
               onClick={() => setIsNotificationDrawerOpen(true)}
               className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-lg transition-colors relative"
             >
@@ -61,11 +61,11 @@ export function Header() {
                   d="M15 17h5l-5 5v-5zM10.5 3.75a6 6 0 0 1 6 6v4.5l2.25 2.25a2.25 2.25 0 0 1-2.25 2.25H4.5a2.25 2.25 0 0 1-2.25-2.25V9.75a6 6 0 0 1 6-6z"
                 />
               </svg>
-              
+
               {/* Notification indicator */}
-              {stats.unread > 0 && (
+              {!isLoading && unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                  {stats.unread > 9 ? '9+' : stats.unread}
+                  {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
             </button>
@@ -121,8 +121,12 @@ export function Header() {
           {/* User menu */}
           <div className="flex items-center space-x-3">
             <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">{user?.name || 'User'}</p>
-              <p className="text-xs text-gray-500">{user?.email || 'user@example.com'}</p>
+              <p className="text-sm font-medium text-gray-900">
+                {user?.name || "User"}
+              </p>
+              <p className="text-xs text-gray-500">
+                {user?.email || "user@example.com"}
+              </p>
             </div>
             <button
               onClick={handleLogout}
@@ -147,7 +151,7 @@ export function Header() {
       </div>
 
       {/* Notification Drawer */}
-      <NotificationDrawer 
+      <NotificationDrawer
         isOpen={isNotificationDrawerOpen}
         onClose={() => setIsNotificationDrawerOpen(false)}
       />

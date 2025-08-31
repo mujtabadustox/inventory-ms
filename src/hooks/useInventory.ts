@@ -63,6 +63,18 @@ export function useCreateInventoryItem() {
       // Invalidate and refetch inventory list and totals
       queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() });
       queryClient.invalidateQueries({ queryKey: inventoryKeys.totals() });
+
+      // Invalidate low stock count since new items might affect this
+      queryClient.invalidateQueries({
+        queryKey: [...inventoryKeys.all, "lowStockCount"],
+      });
+
+      // Invalidate sales-related queries since new inventory affects sales data
+      queryClient.invalidateQueries({ queryKey: ["sale-orders", "summary"] });
+      queryClient.invalidateQueries({
+        queryKey: ["sale-orders", "top-products"],
+      });
+
       toast.success("Inventory item created successfully!");
     },
     onError: (error: any) => {
@@ -84,6 +96,18 @@ export function useUpdateInventoryItem() {
       queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() });
       queryClient.invalidateQueries({ queryKey: inventoryKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: inventoryKeys.totals() });
+
+      // Invalidate low stock count since quantities might have changed
+      queryClient.invalidateQueries({
+        queryKey: [...inventoryKeys.all, "lowStockCount"],
+      });
+
+      // Invalidate sales-related queries since inventory changes affect sales data
+      queryClient.invalidateQueries({ queryKey: ["sale-orders", "summary"] });
+      queryClient.invalidateQueries({
+        queryKey: ["sale-orders", "top-products"],
+      });
+
       toast.success("Inventory item updated successfully!");
     },
     onError: (error: any) => {
@@ -103,6 +127,18 @@ export function useDeleteInventoryItem() {
       // Invalidate and refetch inventory list and totals
       queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() });
       queryClient.invalidateQueries({ queryKey: inventoryKeys.totals() });
+
+      // Invalidate low stock count since deleted items affect this
+      queryClient.invalidateQueries({
+        queryKey: [...inventoryKeys.all, "lowStockCount"],
+      });
+
+      // Invalidate sales-related queries since deleted inventory affects sales data
+      queryClient.invalidateQueries({ queryKey: ["sale-orders", "summary"] });
+      queryClient.invalidateQueries({
+        queryKey: ["sale-orders", "top-products"],
+      });
+
       toast.success("Inventory item deleted successfully!");
     },
     onError: (error: any) => {

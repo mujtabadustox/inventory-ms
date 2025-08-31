@@ -68,9 +68,34 @@ export function useLogin() {
       toast.success("Login successful! Welcome back.");
       navigate("/");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Login failed:", error);
-      toast.error("Login failed. Please check your credentials.");
+
+      // Extract the specific error message from the API response
+      let errorMessage = "Login failed. Please check your credentials.";
+
+      // Check for the custom error structure from ApiClient
+      if (error?.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (
+        error?.message &&
+        error.message.includes("HTTP error! status: 400")
+      ) {
+        // Fallback for generic HTTP errors
+        errorMessage =
+          "Invalid login credentials. Please check your email and password.";
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.detail) {
+        errorMessage = error.detail;
+      } else if (error?.response?.status === 400) {
+        errorMessage =
+          "Invalid login credentials. Please check your email and password.";
+      }
+
+      toast.error(errorMessage);
     },
   });
 }
@@ -157,7 +182,21 @@ export function useSignup() {
     },
     onError: (error: any) => {
       console.error("Signup failed:", error);
-      toast.error("Signup failed. Please try again.");
+
+      // Extract the specific error message from the API response
+      let errorMessage = "Signup failed. Please try again.";
+
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.detail) {
+        errorMessage = error.detail;
+      } else if (error?.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      toast.error(errorMessage);
     },
   });
 }
@@ -180,17 +219,28 @@ export function useRefreshToken() {
 }
 
 // Hook for forgot password
-export function useForgotPassword() {
+export const useForgotPassword = () => {
   return useMutation({
-    mutationFn: async (data: ForgotPasswordRequest) => {
-      return authApi.forgotPassword(data);
+    mutationFn: authApi.forgotPassword,
+    onSuccess: () => {
+      toast.success("Password reset link sent to your email!");
     },
-    onSuccess: (result) => {
-      toast.success("Password reset email sent! Please check your inbox.");
-    },
-    onError: (error: any) => {
-      console.error("Forgot password failed:", error);
-      toast.error("Failed to send reset email. Please try again.");
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to send reset link");
     },
   });
-}
+};
+
+export const useResetPassword = () => {
+  return useMutation({
+    mutationFn: authApi.resetPassword,
+    onSuccess: () => {
+      toast.success(
+        "Password reset successfully! Please login with your new password."
+      );
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to reset password");
+    },
+  });
+};

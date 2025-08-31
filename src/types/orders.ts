@@ -1,5 +1,5 @@
 // Purchase Order Types
-export type PurchaseOrderStatus = 'Draft' | 'Confirmed' | 'Received';
+export type PurchaseOrderStatus = "Draft" | "Confirmed" | "Received";
 
 export interface PurchaseOrderItem {
   id: string;
@@ -8,6 +8,7 @@ export interface PurchaseOrderItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  price: number; // Custom price for purchase orders
 }
 
 export interface PurchaseOrder {
@@ -27,15 +28,17 @@ export interface PurchaseOrder {
 }
 
 // Sale Order Types
-export type SaleOrderStatus = 'Draft' | 'Confirmed' | 'Packed' | 'Shipped' | 'Delivered';
+export type SaleOrderStatus =
+  | "Draft"
+  | "Confirmed"
+  | "Packed"
+  | "Shipped"
+  | "Delivered";
 
 export interface SaleOrderItem {
-  id: string;
-  itemId: string;
-  itemName: string;
+  item_id: number;
   quantity: number;
-  unitPrice: number;
-  totalPrice: number;
+  sale_price: number;
 }
 
 export interface SaleOrder {
@@ -63,8 +66,8 @@ export interface OrderFilters {
   status: string;
   dateFrom: string;
   dateTo: string;
-  sortBy: 'orderDate' | 'orderNumber' | 'totalAmount' | 'status';
-  sortOrder: 'asc' | 'desc';
+  sortBy: "orderDate" | "orderNumber" | "totalAmount" | "status";
+  sortOrder: "asc" | "desc";
 }
 
 // Form Types
@@ -76,9 +79,10 @@ export interface CreatePurchaseOrderForm {
   items: {
     itemId: string;
     itemName: string;
-    quantity: number;
+    quantity: string; // Changed to string to allow empty input
     unitPrice: number;
     totalPrice: number;
+    price: number; // Custom price for purchase orders
   }[];
   notes?: string;
 }
@@ -92,10 +96,10 @@ export interface CreateSaleOrderForm {
   items: {
     itemId: string;
     itemName: string;
-    quantity: number;
+    quantity: string; // Changed to string to allow empty input
     unitPrice: number;
     totalPrice: number;
+    price: number; // Custom price for sale orders
   }[];
-  shippingMethod?: string;
   notes?: string;
 }

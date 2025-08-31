@@ -1,96 +1,49 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useCreatePurchaseOrder } from "../hooks/usePurchaseOrders";
-import { useInventoryItems } from "../hooks/useInventory";
-import type { CreatePurchaseOrderRequest } from "../services/api";
+import { useUpdatePurchaseOrder } from "../hooks/usePurchaseOrders";
+import type {
+  PurchaseOrder,
+  UpdatePurchaseOrderRequest,
+  InventoryItem,
+} from "../services/api";
 import { toast } from "sonner";
 
 interface PurchaseOrderItem {
   item_id: number;
-  quantity: string; // Changed to string to allow empty input
+  quantity: number;
 }
 
-export function CreatePurchaseOrder() {
-  const navigate = useNavigate();
-  const createOrderMutation = useCreatePurchaseOrder();
-  const { data: inventoryItems = [], isLoading: inventoryLoading } =
-    useInventoryItems();
+interface EditFormProps {
+  order: PurchaseOrder;
+  inventoryItems: InventoryItem[];
+  navigate: (path: string) => void;
+}
 
+export function EditForm({ order, inventoryItems, navigate }: EditFormProps) {
+  const updateOrderMutation = useUpdatePurchaseOrder();
+  console.log("Order:", order);
+
+  // Initialize form data with the order data passed as props
   const [formData, setFormData] = useState({
-    supplier_name: "",
-    supplier_phone: "",
-    supplier_email: "",
-    order_date: new Date().toISOString().split("T")[0],
+    supplier_name: order.supplier_name || "",
+    supplier_phone: order.phone_number || "",
+    supplier_email: order.email || "",
+    order_date: new Date(order.order_date).toISOString().split("T")[0],
   });
 
-  const [orderItems, setOrderItems] = useState<PurchaseOrderItem[]>([]);
-  const [selectedItemId, setSelectedItemId] = useState<number | "">("");
-  const [itemQuantity, setItemQuantity] = useState<string>("1");
+  // Keep original order items - they cannot be edited
+  const [orderItems] = useState<PurchaseOrderItem[]>(
+    order.items.map((item) => ({
+      item_id: item.item_id,
+      quantity: item.quantity,
+    }))
+  );
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleNumberInputChange = (value: string) => {
-    setItemQuantity(value);
-  };
-
-  const handleAddItem = () => {
-    if (!selectedItemId || itemQuantity === "" || Number(itemQuantity) <= 0) {
-      toast.error("Please select an item and enter a valid quantity");
-      return;
-    }
-
-    // Check if item already exists in order
-    const existingItemIndex = orderItems.findIndex(
-      (item) => item.item_id === selectedItemId
-    );
-
-    if (existingItemIndex !== -1) {
-      // Update existing item quantity
-      const updatedItems = [...orderItems];
-      updatedItems[existingItemIndex].quantity = itemQuantity;
-      setOrderItems(updatedItems);
-      toast.success("Item quantity updated");
-    } else {
-      // Add new item
-      setOrderItems((prev) => [
-        ...prev,
-        { item_id: selectedItemId, quantity: itemQuantity },
-      ]);
-      toast.success("Item added to order");
-    }
-
-    // Reset form
-    setSelectedItemId("");
-    setItemQuantity("1");
-  };
-
-  const handleRemoveItem = (index: number) => {
-    setOrderItems((prev) => prev.filter((_, i) => i !== index));
-    toast.success("Item removed from order");
-  };
-
-  const handleUpdateItemQuantity = (index: number, newQuantity: string) => {
-    if (newQuantity === "" || Number(newQuantity) <= 0) {
-      handleRemoveItem(index);
-      return;
-    }
-
-    setOrderItems((prev) =>
-      prev.map((item, i) =>
-        i === index ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (orderItems.length === 0) {
-      toast.error("Please add at least one item to the order");
-      return;
-    }
 
     if (!formData.supplier_name.trim()) {
       toast.error("Please enter supplier name");
@@ -102,20 +55,20 @@ export function CreatePurchaseOrder() {
       return;
     }
 
-    try {
-      const createData: CreatePurchaseOrderRequest = {
-        supplier_name: formData.supplier_name.trim(),
-        supplier_phone: formData.supplier_phone.trim(),
-        supplier_email: formData.supplier_email.trim(),
-        order_date: new Date(formData.order_date).toISOString(),
-        items: orderItems.map((item) => ({
-          item_id: item.item_id,
-          quantity: Number(item.quantity) || 0,
-        })),
-      };
+    const updateData: UpdatePurchaseOrderRequest = {
+      supplier_name: formData.supplier_name.trim(),
+      supplier_phone: formData.supplier_phone.trim(),
+      supplier_email: formData.supplier_email.trim(),
+      order_date: new Date(formData.order_date).toISOString(),
+      items: orderItems, // Keep original items unchanged
+    };
 
-      await createOrderMutation.mutateAsync(createData);
-      navigate("/orders/purchase");
+    try {
+      await updateOrderMutation.mutateAsync({
+        order_id: order.id.toString(),
+        data: updateData,
+      });
+      navigate(`/orders/purchase/${order.id}`);
     } catch (error) {
       // Error is handled by the mutation hook
     }
@@ -134,7 +87,7 @@ export function CreatePurchaseOrder() {
   const calculateTotalAmount = () => {
     return orderItems.reduce((total, orderItem) => {
       const itemPrice = getItemPrice(orderItem.item_id);
-      return total + itemPrice * Number(orderItem.quantity);
+      return total + itemPrice * orderItem.quantity;
     }, 0);
   };
 
@@ -145,19 +98,6 @@ export function CreatePurchaseOrder() {
     }).format(amount);
   };
 
-  if (inventoryLoading) {
-    return (
-      <div className="p-6 bg-gray-50 min-h-screen">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading inventory items...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -166,17 +106,17 @@ export function CreatePurchaseOrder() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Create Purchase Order
+                Edit Purchase Order
               </h1>
               <p className="text-gray-600">
-                Create a new purchase order with supplier details and items
+                Order #{order.id} - {order.supplier_name}
               </p>
             </div>
             <button
-              onClick={() => navigate("/orders/purchase")}
+              onClick={() => navigate(`/orders/purchase/${order.id}`)}
               className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
             >
-              Back to Purchase Orders
+              Back to Order Details
             </button>
           </div>
         </div>
@@ -267,65 +207,15 @@ export function CreatePurchaseOrder() {
             </div>
           </div>
 
-          {/* Add Items */}
+          {/* Order Items - Read Only */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Order Items
+              Order Items (Read Only)
             </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div>
-                <label
-                  htmlFor="item_select"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Select Item
-                </label>
-                <select
-                  id="item_select"
-                  value={selectedItemId}
-                  onChange={(e) =>
-                    setSelectedItemId(
-                      e.target.value ? Number(e.target.value) : ""
-                    )
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Choose an item...</option>
-                  {inventoryItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name} - ${item.price} (Stock: {item.quantity})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="item_quantity"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Quantity
-                </label>
-                <input
-                  type="number"
-                  id="item_quantity"
-                  value={itemQuantity}
-                  onChange={(e) => handleNumberInputChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="flex items-end">
-                <button
-                  type="button"
-                  onClick={handleAddItem}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  Add Item
-                </button>
-              </div>
-            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Order items cannot be modified. Only supplier information can be
+              edited.
+            </p>
 
             {/* Order Items List */}
             {orderItems.length > 0 && (
@@ -339,7 +229,7 @@ export function CreatePurchaseOrder() {
                   {orderItems.map((orderItem, index) => {
                     const itemName = getItemName(orderItem.item_id);
                     const itemPrice = getItemPrice(orderItem.item_id);
-                    const itemTotal = itemPrice * Number(orderItem.quantity);
+                    const itemTotal = itemPrice * orderItem.quantity;
 
                     return (
                       <div
@@ -357,21 +247,9 @@ export function CreatePurchaseOrder() {
                         </div>
 
                         <div className="flex items-center space-x-3">
-                          <input
-                            type="number"
-                            value={orderItem.quantity}
-                            onChange={(e) =>
-                              handleUpdateItemQuantity(index, e.target.value)
-                            }
-                            className="w-20 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveItem(index)}
-                            className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-sm"
-                          >
-                            Remove
-                          </button>
+                          <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded">
+                            Qty: {orderItem.quantity}
+                          </span>
                         </div>
                       </div>
                     );
@@ -398,32 +276,28 @@ export function CreatePurchaseOrder() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">
-                  {orderItems.length > 0
-                    ? `Total: ${orderItems.length} item${
-                        orderItems.length !== 1 ? "s" : ""
-                      } - ${formatCurrency(calculateTotalAmount())}`
-                    : "No items added to order"}
+                  Order contains {orderItems.length} item
+                  {orderItems.length !== 1 ? "s" : ""} -{" "}
+                  {formatCurrency(calculateTotalAmount())}
                 </p>
               </div>
 
               <div className="flex items-center space-x-3">
                 <button
                   type="button"
-                  onClick={() => navigate("/orders/purchase")}
+                  onClick={() => navigate(`/orders/purchase/${order.id}`)}
                   className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={
-                    orderItems.length === 0 || createOrderMutation.isPending
-                  }
+                  disabled={updateOrderMutation.isPending}
                   className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {createOrderMutation.isPending
-                    ? "Creating..."
-                    : "Create Purchase Order"}
+                  {updateOrderMutation.isPending
+                    ? "Updating..."
+                    : "Update Purchase Order"}
                 </button>
               </div>
             </div>

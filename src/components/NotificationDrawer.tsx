@@ -1,297 +1,417 @@
-import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import type { Notification, NotificationFilters } from '../types/notifications';
-import { dummyNotifications, getNotificationStats } from '../data/dummyNotifications';
+import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  useMyNotifications,
+  useUpdateNotification,
+  useDeleteNotification,
+} from "../hooks/useNotifications";
+import type { Notification } from "../services/api";
 
 interface NotificationDrawerProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps) {
+interface NotificationFilters {
+  type: string;
+  status: string;
+  search: string;
+}
+
+export function NotificationDrawer({
+  isOpen,
+  onClose,
+}: NotificationDrawerProps) {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<NotificationFilters>({
-    category: '',
-    type: '',
-    isRead: null,
-    search: ''
+    type: "",
+    status: "",
+    search: "",
   });
 
-  const stats = getNotificationStats();
+  // Fetch notifications with real-time updates
+  const { data: notifications = [], isLoading, error } = useMyNotifications();
+  const updateNotificationMutation = useUpdateNotification();
+  const deleteNotificationMutation = useDeleteNotification();
 
   // Filter notifications based on current filters
   const filteredNotifications = useMemo(() => {
-    return dummyNotifications.filter(notification => {
-      const matchesSearch = filters.search === '' || 
-        notification.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-        notification.message.toLowerCase().includes(filters.search.toLowerCase());
-      
-      const matchesCategory = filters.category === '' || notification.category === filters.category;
-      const matchesType = filters.type === '' || notification.type === filters.type;
-      const matchesReadStatus = filters.isRead === null || notification.isRead === filters.isRead;
-      
-      return matchesSearch && matchesCategory && matchesType && matchesReadStatus;
+    return notifications.filter((notification) => {
+      const matchesSearch =
+        filters.search === "" ||
+        notification.description
+          .toLowerCase()
+          .includes(filters.search.toLowerCase()) ||
+        notification.notification_type
+          .toLowerCase()
+          .includes(filters.search.toLowerCase());
+
+      const matchesType =
+        filters.type === "" || notification.notification_type === filters.type;
+      const matchesStatus =
+        filters.status === "" || notification.status === filters.status;
+
+      return matchesSearch && matchesType && matchesStatus;
     });
-  }, [filters]);
+  }, [notifications, filters]);
 
   const handleNotificationClick = (notification: Notification) => {
-    // Mark as read
-    if (!notification.isRead) {
-      // In real app, you would call API to mark as read
-      console.log('Marking notification as read:', notification.id);
-    }
-    
-    // Navigate to action URL if available
-    if (notification.actionUrl) {
-      navigate(notification.actionUrl);
-      onClose();
+    // Mark as read if unread
+    if (notification.status === "unread") {
+      updateNotificationMutation.mutate({
+        notification_id: notification.id,
+        data: {
+          notification_type: notification.notification_type,
+          description: notification.description,
+          status: "read",
+        },
+      });
     }
   };
 
-  const handleFilterChange = (field: keyof NotificationFilters, value: string | boolean | null) => {
-    setFilters(prev => ({
+  const handleMarkAsRead = (notificationId: string) => {
+    // Find the notification to get its full data
+    const notification = notifications.find((n) => n.id === notificationId);
+    if (notification) {
+      updateNotificationMutation.mutate({
+        notification_id: notificationId,
+        data: {
+          notification_type: notification.notification_type,
+          description: notification.description,
+          status: "read",
+        },
+      });
+    }
+  };
+
+  const handleMarkAsUnread = (notificationId: string) => {
+    updateNotificationMutation.mutate({
+      notification_id: notificationId,
+      data: {
+        status: "unread",
+      },
+    });
+  };
+
+  const handleDeleteNotification = (notificationId: string) => {
+    deleteNotificationMutation.mutate(notificationId);
+  };
+
+  const handleFilterChange = (
+    field: keyof NotificationFilters,
+    value: string
+  ) => {
+    setFilters((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
-  const getTypeIcon = (type: Notification['type']) => {
-    switch (type) {
-      case 'success': return '✅';
-      case 'warning': return '⚠️';
-      case 'error': return '❌';
-      case 'info': return 'ℹ️';
-      default: return '📢';
+  const getTypeIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "success":
+        return "✅";
+      case "warning":
+        return "⚠️";
+      case "error":
+        return "❌";
+      case "info":
+        return "ℹ️";
+      case "low_stock":
+        return "📦";
+      case "order_update":
+        return "📋";
+      case "system":
+        return "⚙️";
+      case "inventory":
+        return "🏪";
+      default:
+        return "📢";
     }
   };
 
-  const getTypeColor = (type: Notification['type']) => {
-    switch (type) {
-      case 'success': return 'text-green-600 bg-green-100';
-      case 'warning': return 'text-yellow-600 bg-yellow-100';
-      case 'error': return 'text-red-600 bg-red-100';
-      case 'info': return 'text-blue-600 bg-blue-100';
-      default: return 'text-gray-600 bg-gray-100';
+  const getTypeColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "success":
+        return "text-green-600 bg-green-100";
+      case "warning":
+        return "text-yellow-600 bg-yellow-100";
+      case "error":
+        return "text-red-600 bg-red-100";
+      case "info":
+        return "text-blue-600 bg-blue-100";
+      case "low_stock":
+        return "text-orange-600 bg-orange-100";
+      case "order_update":
+        return "text-purple-600 bg-purple-100";
+      case "system":
+        return "text-gray-600 bg-gray-100";
+      case "inventory":
+        return "text-indigo-600 bg-indigo-100";
+      default:
+        return "text-gray-600 bg-gray-100";
     }
   };
 
-  const getCategoryLabel = (category: Notification['category']) => {
-    switch (category) {
-      case 'low_stock': return 'Low Stock';
-      case 'order_update': return 'Order Update';
-      case 'system': return 'System';
-      case 'inventory': return 'Inventory';
-      case 'general': return 'General';
-      default: return category;
-    }
-  };
-
-  const formatTimestamp = (timestamp: Date) => {
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
     const now = new Date();
-    const diff = now.getTime() - timestamp.getTime();
+    const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / (1000 * 60));
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    if (minutes < 1) return 'Just now';
+    if (minutes < 1) return "Just now";
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     if (days < 7) return `${days}d ago`;
-    return timestamp.toLocaleDateString();
+    return date.toLocaleDateString();
   };
 
+  // Get unique notification types for filter
+  const notificationTypes = useMemo(() => {
+    const types = [...new Set(notifications.map((n) => n.notification_type))];
+    return types.sort();
+  }, [notifications]);
+
+  // Get notification stats
+  const stats = useMemo(() => {
+    const total = notifications.length;
+    const unread = notifications.filter((n) => n.status === "unread").length;
+    const read = total - unread;
+
+    return { total, unread, read };
+  }, [notifications]);
+
+  if (!isOpen) return null;
+
   return (
-    <>
+    <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={onClose}
-        />
-      )}
+      <div
+        className="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
+        onClick={onClose}
+      />
 
       {/* Drawer */}
-      <div className={`fixed right-0 top-0 h-full w-96 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 flex flex-col ${
-        isOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}>
+      <div className="absolute right-0 top-0 h-full w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
         {/* Header */}
-        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            <h2 className="text-lg font-semibold text-gray-900">Notifications</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Notifications
+            </h2>
             {stats.unread > 0 && (
-              <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
-                {stats.unread}
+              <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
+                {stats.unread} new
               </span>
             )}
           </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => navigate('/notifications')}
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              View All
-            </button>
-            <button
-              onClick={onClose}
-              className="p-1 text-gray-400 hover:text-gray-600"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Stats Bar */}
+        <div className="flex items-center justify-around p-4 bg-gray-50 border-b border-gray-200">
+          <div className="text-center">
+            <div className="text-lg font-semibold text-gray-900">
+              {stats.total}
+            </div>
+            <div className="text-xs text-gray-500">Total</div>
+          </div>
+          <div className="text-center">
+            <div className="text-lg font-semibold text-blue-600">
+              {stats.unread}
+            </div>
+            <div className="text-xs text-blue-500">Unread</div>
+          </div>
+          <div className="text-center">
+            <div className="text-lg font-semibold text-green-600">
+              {stats.read}
+            </div>
+            <div className="text-xs text-green-500">Read</div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="flex-shrink-0 p-4 border-b border-gray-200 space-y-3">
+        <div className="p-4 border-b border-gray-200 space-y-3">
           {/* Search */}
           <input
             type="text"
             placeholder="Search notifications..."
             value={filters.search}
-            onChange={(e) => handleFilterChange('search', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            onChange={(e) => handleFilterChange("search", e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-          
-          {/* Filter Row */}
+
+          {/* Type and Status filters */}
           <div className="flex space-x-2">
-            <select
-              value={filters.category}
-              onChange={(e) => handleFilterChange('category', e.target.value)}
-              className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="">All Categories</option>
-              <option value="low_stock">Low Stock</option>
-              <option value="order_update">Order Update</option>
-              <option value="system">System</option>
-              <option value="inventory">Inventory</option>
-              <option value="general">General</option>
-            </select>
-            
             <select
               value={filters.type}
-              onChange={(e) => handleFilterChange('type', e.target.value)}
-              className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onChange={(e) => handleFilterChange("type", e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All Types</option>
-              <option value="info">Info</option>
-              <option value="success">Success</option>
-              <option value="warning">Warning</option>
-              <option value="error">Error</option>
+              {notificationTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type.replace("_", " ").toUpperCase()}
+                </option>
+              ))}
             </select>
-          </div>
 
-          {/* Quick Filters */}
-          <div className="flex space-x-2">
-            <button
-              onClick={() => handleFilterChange('isRead', null)}
-              className={`px-2 py-1 text-xs rounded ${
-                filters.isRead === null 
-                  ? 'bg-blue-100 text-blue-800' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+            <select
+              value={filters.status}
+              onChange={(e) => handleFilterChange("status", e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              All
-            </button>
-            <button
-              onClick={() => handleFilterChange('isRead', false)}
-              className={`px-2 py-1 text-xs rounded ${
-                filters.isRead === false 
-                  ? 'bg-red-100 text-red-800' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Unread ({stats.unread})
-            </button>
-            <button
-              onClick={() => handleFilterChange('isRead', true)}
-              className={`px-2 py-1 text-xs rounded ${
-                filters.isRead === true 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Read
-            </button>
+              <option value="">All Status</option>
+              <option value="read">Read</option>
+              <option value="unread">Unread</option>
+            </select>
           </div>
         </div>
 
-        {/* Notifications List - Scrollable Area */}
-        <div className="flex-1 overflow-y-auto min-h-0">
-          {filteredNotifications.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              <div className="text-4xl mb-2">🔕</div>
-              <p>No notifications found</p>
+        {/* Notifications List */}
+        <div className="flex-1 overflow-y-auto">
+          {isLoading ? (
+            <div className="p-4 text-center text-gray-500">
+              Loading notifications...
+            </div>
+          ) : error ? (
+            <div className="p-4 text-center text-red-500">
+              Error loading notifications
+            </div>
+          ) : filteredNotifications.length === 0 ? (
+            <div className="p-4 text-center text-gray-500">
+              No notifications found
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="space-y-1">
               {filteredNotifications.map((notification) => (
                 <div
                   key={notification.id}
-                  onClick={() => handleNotificationClick(notification)}
-                  className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                    !notification.isRead ? 'bg-blue-50' : ''
+                  className={`p-4 border-l-4 transition-colors cursor-pointer hover:bg-gray-50 ${
+                    notification.status === "unread"
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200"
                   }`}
+                  onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex items-start space-x-3">
                     <div className="flex-shrink-0">
-                      <span className="text-lg">{getTypeIcon(notification.type)}</span>
+                      <span className="text-lg">
+                        {getTypeIcon(notification.notification_type)}
+                      </span>
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className={`text-sm font-medium ${
-                          !notification.isRead ? 'text-gray-900' : 'text-gray-700'
-                        }`}>
-                          {notification.title}
-                        </h3>
-                        <div className="flex items-center space-x-2">
-                          {notification.isNew && (
-                            <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                              New
-                            </span>
-                          )}
-                          <span className="text-xs text-gray-500">
-                            {formatTimestamp(notification.timestamp)}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                        {notification.message}
-                      </p>
-                      
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-2 py-1 text-xs font-medium rounded ${getTypeColor(notification.type)}`}>
-                          {getCategoryLabel(notification.category)}
+                      <div className="flex items-center justify-between">
+                        <p
+                          className={`text-sm font-medium ${
+                            notification.status === "unread"
+                              ? "text-gray-900"
+                              : "text-gray-700"
+                          }`}
+                        >
+                          {notification.notification_type
+                            .replace("_", " ")
+                            .toUpperCase()}
+                        </p>
+                        <span className="text-xs text-gray-500">
+                          {notification.created_at
+                            ? formatTimestamp(notification.created_at)
+                            : "Recently"}
                         </span>
-                        {notification.actionUrl && (
-                          <span className="text-xs text-blue-600 font-medium">
-                            Click to view →
-                          </span>
-                        )}
+                      </div>
+
+                      <p
+                        className={`text-sm mt-1 ${
+                          notification.status === "unread"
+                            ? "text-gray-800"
+                            : "text-gray-600"
+                        }`}
+                      >
+                        {notification.description}
+                      </p>
+
+                      <div className="flex items-center space-x-2 mt-2">
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(
+                            notification.notification_type
+                          )}`}
+                        >
+                          {notification.notification_type}
+                        </span>
+
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            notification.status === "unread"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {notification.status}
+                        </span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center space-x-2 mt-3 pt-3 border-t border-gray-100">
+                    {notification.status === "unread" ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMarkAsRead(notification.id);
+                        }}
+                        className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                      >
+                        Mark as Read
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMarkAsUnread(notification.id);
+                        }}
+                        className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                      >
+                        Mark as Unread
+                      </button>
+                    )}
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteNotification(notification.id);
+                      }}
+                      className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-
-        {/* Footer */}
-        <div className="flex-shrink-0 p-4 border-t border-gray-200 bg-gray-50">
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>{filteredNotifications.length} of {stats.total} notifications</span>
-            <button
-              onClick={() => navigate('/notifications')}
-              className="text-blue-600 hover:text-blue-800 font-medium"
-            >
-              View All Notifications
-            </button>
-          </div>
-        </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -1,111 +1,95 @@
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/authStore";
-import { useLogout } from "../hooks/useAuth";
-import { useLowStockCount } from "../hooks/useInventory";
-import { dummyPurchaseOrders, dummySaleOrders } from "../data/dummyOrders";
-import { dummyInventoryItems } from "../data/dummyInventory";
+import { useLowStockCount, useInventoryTotals } from "../hooks/useInventory";
+import { usePurchaseOrderSummary } from "../hooks/usePurchaseOrders";
+import {
+  useSaleOrderSummary,
+  useTopSellingProducts,
+} from "../hooks/useSaleOrders";
 
 export function Dashboard() {
   const { user } = useAuthStore();
-  const logoutMutation = useLogout();
   const navigate = useNavigate();
   const { data: lowStockData, isLoading: lowStockLoading } = useLowStockCount();
+  const { data: purchaseOrderSummary, isLoading: purchaseOrderSummaryLoading } =
+    usePurchaseOrderSummary();
+  const { data: inventoryTotals, isLoading: inventoryTotalsLoading } =
+    useInventoryTotals();
+  const { data: saleOrderSummary, isLoading: saleOrderSummaryLoading } =
+    useSaleOrderSummary();
+  const { data: topSellingProducts, isLoading: topSellingLoading } =
+    useTopSellingProducts();
 
   // Calculate comprehensive metrics
   const metrics = useMemo(() => {
     // Purchase Order metrics
-    const totalPurchaseOrders = dummyPurchaseOrders.length;
-    const totalPurchaseAmount = dummyPurchaseOrders.reduce(
-      (sum, order) => sum + order.totalAmount,
-      0
-    );
-    const draftPurchaseOrders = dummyPurchaseOrders.filter(
-      (order) => order.status === "Draft"
-    ).length;
-    const confirmedPurchaseOrders = dummyPurchaseOrders.filter(
-      (order) => order.status === "Confirmed"
-    ).length;
-    const receivedPurchaseOrders = dummyPurchaseOrders.filter(
-      (order) => order.status === "Received"
-    ).length;
+    const totalPurchaseOrders = purchaseOrderSummary?.total_orders || 0;
+    const totalPurchaseAmount = purchaseOrderSummary?.total_spent || 0;
+    const pendingPurchaseOrders = purchaseOrderSummary?.pending_orders || 0;
+    const confirmedPurchaseOrders = purchaseOrderSummary?.confirmed_orders || 0;
+    const receivedPurchaseOrders = purchaseOrderSummary?.received_orders || 0;
 
-    // Sale Order metrics
-    const totalSaleOrders = dummySaleOrders.length;
-    const totalSaleAmount = dummySaleOrders.reduce(
-      (sum, order) => sum + order.totalAmount,
-      0
-    );
-    const draftSaleOrders = dummySaleOrders.filter(
-      (order) => order.status === "Draft"
-    ).length;
-    const confirmedSaleOrders = dummySaleOrders.filter(
-      (order) => order.status === "Confirmed"
-    ).length;
-    const shippedSaleOrders = dummySaleOrders.filter(
-      (order) => order.status === "Shipped"
-    ).length;
-    const deliveredSaleOrders = dummySaleOrders.filter(
-      (order) => order.status === "Delivered"
-    ).length;
+    // Sale Order metrics - using real API data
+    const totalSaleOrders = saleOrderSummary?.total_sales || 0;
+    const totalSaleAmount = saleOrderSummary?.total_revenue || 0;
 
-    // Inventory metrics - using real API data for low stock count
-    const totalItems = dummyInventoryItems.length;
-    const totalStockValue = dummyInventoryItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-    const lowStockItems = lowStockData?.low_stock_count || 0; // Real API data
-    const outOfStockItems = dummyInventoryItems.filter(
-      (item) => item.quantity === 0
-    );
-    const criticalStockItems = dummyInventoryItems.filter(
-      (item) => item.quantity <= 5
-    );
-
-    // Top selling items (mock data - in real app this would come from sales analytics)
-    const topSellingItems = [
-      {
-        id: "1",
-        name: "Wireless Bluetooth Headphones",
-        sales: 156,
-        revenue: 31200,
-      },
-      { id: "6", name: "Smartphone Case", sales: 89, revenue: 1780 },
-      { id: "2", name: "Organic Cotton T-Shirt", sales: 67, revenue: 2009 },
-      { id: "9", name: "Denim Jeans", sales: 45, revenue: 3599 },
-    ];
+    // Inventory metrics - using real API data
+    const totalItems = inventoryTotals?.total_quantity || 0;
+    const totalStockValue = inventoryTotals?.total_value || 0;
+    const lowStockItems = lowStockData?.low_stock_count || 0;
+    const outOfStockItems = lowStockData?.out_of_stock_count || 0;
 
     return {
       purchaseOrders: {
         total: totalPurchaseOrders,
         totalAmount: totalPurchaseAmount,
-        draft: draftPurchaseOrders,
+        pending: pendingPurchaseOrders,
         confirmed: confirmedPurchaseOrders,
         received: receivedPurchaseOrders,
       },
       saleOrders: {
         total: totalSaleOrders,
         totalAmount: totalSaleAmount,
-        draft: draftSaleOrders,
-        confirmed: confirmedSaleOrders,
-        shipped: shippedSaleOrders,
-        delivered: deliveredSaleOrders,
       },
       inventory: {
         totalItems,
         totalStockValue,
         lowStock: lowStockItems,
-        outOfStock: outOfStockItems.length,
-        critical: criticalStockItems.length,
+        outOfStock: outOfStockItems,
       },
-      topSelling: topSellingItems,
+      topSelling: topSellingProducts || [],
     };
-  }, [lowStockData]);
+  }, [
+    lowStockData,
+    purchaseOrderSummary,
+    inventoryTotals,
+    saleOrderSummary,
+    topSellingProducts,
+  ]);
 
   const handleCardClick = (path: string) => {
     navigate(path);
   };
+
+  if (
+    purchaseOrderSummaryLoading ||
+    inventoryTotalsLoading ||
+    lowStockLoading ||
+    saleOrderSummaryLoading ||
+    topSellingLoading
+  ) {
+    return (
+      <div className="p-6 bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading dashboard...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -113,20 +97,14 @@ export function Dashboard() {
         {/* Welcome Message */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Welcome back, {user?.firstName || user?.name || "User"}! 👋
+            <div className="text-center">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                Welcome back, {user?.name || "User"}! 👋
               </h1>
               <p className="text-gray-600 text-lg">
                 Here's your inventory overview and key metrics for today.
               </p>
             </div>
-            <button
-              onClick={() => logoutMutation.mutate()}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
-            >
-              Test Logout
-            </button>
           </div>
         </div>
 
@@ -146,7 +124,7 @@ export function Dashboard() {
                   ${metrics.saleOrders.totalAmount.toLocaleString()}
                 </p>
                 <p className="text-sm text-green-600 mt-1">
-                  {metrics.saleOrders.total} sale orders
+                  {metrics.saleOrders.total} sales
                 </p>
               </div>
               <div className="p-3 bg-green-100 rounded-full group-hover:bg-green-200 transition-colors">
@@ -215,12 +193,39 @@ export function Dashboard() {
                   {metrics.inventory.lowStock}
                 </p>
                 <p className="text-sm text-orange-600 mt-1">
-                  {metrics.inventory.critical} critical
+                  {metrics.inventory.outOfStock} out of stock
                 </p>
               </div>
               <div className="p-3 bg-orange-100 rounded-full group-hover:bg-orange-200 transition-colors">
                 <span className="text-2xl">⚠️</span>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sales Summary */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900">Sales Summary</h2>
+            <button
+              onClick={() => handleCardClick("/orders/sales")}
+              className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+            >
+              View All Sales →
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+              <div className="text-2xl font-bold text-green-800">
+                {metrics.saleOrders.total}
+              </div>
+              <div className="text-green-700 text-sm">Total Sales</div>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+              <div className="text-2xl font-bold text-blue-800">
+                ${metrics.saleOrders.totalAmount.toLocaleString()}
+              </div>
+              <div className="text-blue-700 text-sm">Total Revenue</div>
             </div>
           </div>
         </div>
@@ -248,14 +253,7 @@ export function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div className="bg-red-100 bg-opacity-80 rounded-lg p-4 border border-red-200">
               <div className="text-3xl font-bold text-red-800">
-                {metrics.inventory.critical}
-              </div>
-              <div className="text-red-700 text-sm">Critical Stock</div>
-              <div className="text-red-600 text-xs">≤5 units remaining</div>
-            </div>
-            <div className="bg-red-100 bg-opacity-80 rounded-lg p-4 border border-red-200">
-              <div className="text-3xl font-bold text-red-800">
-                {metrics.inventory.lowStock - metrics.inventory.critical}
+                {metrics.inventory.lowStock}
               </div>
               <div className="text-red-700 text-sm">Low Stock</div>
               <div className="text-red-600 text-xs">≤10 units remaining</div>
@@ -267,43 +265,12 @@ export function Dashboard() {
               <div className="text-red-700 text-sm">Out of Stock</div>
               <div className="text-red-600 text-xs">0 units available</div>
             </div>
-          </div>
-
-          {/* Low Stock Items List */}
-          <div className="bg-red-100 bg-opacity-60 rounded-lg p-4 border border-red-200">
-            <h3 className="font-semibold mb-3 text-red-800">
-              Critical Items Requiring Attention:
-            </h3>
-            <div className="space-y-2">
-              {dummyInventoryItems
-                .filter((item) => item.quantity <= 5)
-                .slice(0, 3)
-                .map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between bg-red-50 rounded-lg p-3 border border-red-200"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-red-200 rounded-lg flex items-center justify-center">
-                        <span className="text-red-700 text-lg">📦</span>
-                      </div>
-                      <div>
-                        <div className="font-medium text-red-800">
-                          {item.name}
-                        </div>
-                        <div className="text-red-600 text-sm">
-                          {item.category}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-red-700">
-                        {item.quantity}
-                      </div>
-                      <div className="text-red-600 text-xs">units left</div>
-                    </div>
-                  </div>
-                ))}
+            <div className="bg-red-100 bg-opacity-80 rounded-lg p-4 border border-red-200">
+              <div className="text-3xl font-bold text-red-800">
+                {metrics.inventory.totalItems}
+              </div>
+              <div className="text-red-700 text-sm">Total Items</div>
+              <div className="text-red-600 text-xs">In inventory</div>
             </div>
           </div>
         </div>
@@ -326,8 +293,8 @@ export function Dashboard() {
             <div className="space-y-4">
               {metrics.topSelling.map((item, index) => (
                 <div
-                  key={item.id}
-                  onClick={() => handleCardClick(`/inventory/${item.id}`)}
+                  key={item.item_id}
+                  onClick={() => handleCardClick(`/inventory/${item.item_id}`)}
                   className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors group border border-gray-100"
                 >
                   <div
@@ -351,17 +318,17 @@ export function Dashboard() {
                   </div>
                   <div className="flex-1">
                     <div className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">
-                      {item.name}
+                      {item.product_name}
                     </div>
                     <div className="text-sm text-gray-600">
-                      {item.sales} units sold
+                      {item.total_sold} units sold
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="font-semibold text-gray-800">
-                      ${item.revenue.toLocaleString()}
+                      #{item.item_id}
                     </div>
-                    <div className="text-xs text-gray-500">revenue</div>
+                    <div className="text-xs text-gray-500">item ID</div>
                   </div>
                 </div>
               ))}
@@ -428,100 +395,166 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Order Status Overview - Moved to Bottom */}
+        {/* Quick Actions */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">
-              Order Status Overview
-            </h2>
-            <div className="flex space-x-4">
-              <button
-                onClick={() => handleCardClick("/orders/sales")}
-                className="text-green-600 hover:text-green-800 font-medium text-sm"
-              >
-                View All Sales →
-              </button>
-              <button
-                onClick={() => handleCardClick("/orders/purchase")}
-                className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-              >
-                View All Purchases →
-              </button>
-            </div>
+            <h2 className="text-xl font-bold text-gray-900">Quick Actions</h2>
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button
+              onClick={() => handleCardClick("/orders/sales")}
+              className="flex items-center justify-between p-6 bg-green-50 border border-green-200 rounded-xl hover:bg-green-100 transition-colors group"
+            >
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-green-100 rounded-full group-hover:bg-green-200 transition-colors">
+                  <span className="text-2xl">💰</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-green-800">
+                    View Sales Orders
+                  </h3>
+                  <p className="text-green-600 text-sm">
+                    {metrics.saleOrders.total > 0
+                      ? `${metrics.saleOrders.total} order${
+                          metrics.saleOrders.total !== 1 ? "s" : ""
+                        } • $${metrics.saleOrders.totalAmount.toLocaleString()} revenue`
+                      : "No sales orders yet"}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-green-600 group-hover:text-green-800 text-2xl">
+                  →
+                </span>
+                {metrics.saleOrders.total > 0 && (
+                  <div className="text-green-600 text-sm font-medium">
+                    {metrics.saleOrders.total}
+                  </div>
+                )}
+              </div>
+            </button>
 
-          {/* Sale Orders Section */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 text-green-700">
-              Sale Orders
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-100">
-                <div className="text-2xl font-bold text-gray-800">
-                  {metrics.saleOrders.total}
+            <button
+              onClick={() => handleCardClick("/orders/purchase")}
+              className="flex items-center justify-between p-6 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors group"
+            >
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors">
+                  <span className="text-2xl">📦</span>
                 </div>
-                <div className="text-sm text-gray-600">Total Sales</div>
-              </div>
-              <div className="text-center p-4 bg-amber-50 rounded-lg border border-amber-100">
-                <div className="text-2xl font-bold text-amber-700">
-                  {metrics.saleOrders.draft}
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-800">
+                    View Purchase Orders
+                  </h3>
+                  <p className="text-blue-600 text-sm">
+                    {metrics.purchaseOrders.total > 0
+                      ? `${metrics.purchaseOrders.total} order${
+                          metrics.purchaseOrders.total !== 1 ? "s" : ""
+                        } • $${metrics.purchaseOrders.totalAmount.toLocaleString()} spent`
+                      : "No purchase orders yet"}
+                  </p>
                 </div>
-                <div className="text-sm text-amber-600">Draft</div>
               </div>
-              <div className="text-center p-4 bg-sky-50 rounded-lg border border-sky-100">
-                <div className="text-2xl font-bold text-sky-700">
-                  {metrics.saleOrders.confirmed}
-                </div>
-                <div className="text-sm text-sky-600">Confirmed</div>
+              <div className="text-right">
+                <span className="text-blue-600 group-hover:text-blue-800 text-2xl">
+                  →
+                </span>
+                {metrics.purchaseOrders.total > 0 && (
+                  <div className="text-blue-600 text-sm font-medium">
+                    {metrics.purchaseOrders.total}
+                  </div>
+                )}
               </div>
-              <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <div className="text-2xl font-bold text-blue-700">
-                  {metrics.saleOrders.shipped}
-                </div>
-                <div className="text-sm text-blue-600">Shipped</div>
-              </div>
-              <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-100">
-                <div className="text-2xl font-bold text-emerald-700">
-                  {metrics.saleOrders.delivered}
-                </div>
-                <div className="text-sm text-emerald-600">Delivered</div>
-              </div>
-            </div>
-          </div>
+            </button>
 
-          {/* Purchase Orders Section */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 text-blue-700">
-              Purchase Orders
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-100">
-                <div className="text-2xl font-bold text-gray-800">
-                  {metrics.purchaseOrders.total}
+            <button
+              onClick={() => handleCardClick("/inventory")}
+              className="flex items-center justify-between p-6 bg-purple-50 border border-purple-200 rounded-xl hover:bg-purple-100 transition-colors group"
+            >
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-purple-100 rounded-full group-hover:bg-purple-200 transition-colors">
+                  <span className="text-2xl">📋</span>
                 </div>
-                <div className="text-sm text-gray-600">Total Orders</div>
-              </div>
-              <div className="text-center p-4 bg-amber-50 rounded-lg border border-amber-100">
-                <div className="text-2xl font-bold text-amber-700">
-                  {metrics.purchaseOrders.draft}
+                <div>
+                  <h3 className="text-lg font-semibold text-purple-800">
+                    Manage Inventory
+                  </h3>
+                  <p className="text-purple-600 text-sm">
+                    {metrics.inventory.totalItems > 0
+                      ? `${
+                          metrics.inventory.totalItems
+                        } items • $${metrics.inventory.totalStockValue.toLocaleString()} value`
+                      : "No inventory items yet"}
+                  </p>
                 </div>
-                <div className="text-sm text-amber-600">Draft</div>
               </div>
-              <div className="text-center p-4 bg-sky-50 rounded-lg border border-sky-100">
-                <div className="text-2xl font-bold text-sky-700">
-                  {metrics.purchaseOrders.confirmed}
-                </div>
-                <div className="text-sm text-sky-600">Confirmed</div>
+              <div className="text-right">
+                <span className="text-purple-600 group-hover:text-purple-800 text-2xl">
+                  →
+                </span>
+                {metrics.inventory.totalItems > 0 && (
+                  <div className="text-purple-600 text-sm font-medium">
+                    {metrics.inventory.totalItems}
+                  </div>
+                )}
               </div>
-              <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-100">
-                <div className="text-2xl font-bold text-emerald-700">
-                  {metrics.purchaseOrders.received}
-                </div>
-                <div className="text-sm text-emerald-600">Received</div>
-              </div>
-            </div>
+            </button>
           </div>
         </div>
+
+        {/* Recent Purchase Orders */}
+        {purchaseOrderSummary?.recent_orders &&
+          purchaseOrderSummary.recent_orders.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Recent Purchase Orders
+                </h2>
+                <button
+                  onClick={() => handleCardClick("/orders/purchase")}
+                  className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                >
+                  View All Purchases →
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {purchaseOrderSummary.recent_orders.slice(0, 5).map((order) => (
+                  <div
+                    key={order.id}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors cursor-pointer"
+                    onClick={() =>
+                      handleCardClick(`/orders/purchase/${order.id}`)
+                    }
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-blue-600 font-semibold text-sm">
+                          {order.order_number.slice(-4)}
+                        </span>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900">
+                          {order.supplier_name}
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          Order #{order.order_number}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-gray-900">
+                        ${order.total_amount.toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-600 capitalize">
+                        {order.status}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { InventoryItem } from "../services/api";
 import { INVENTORY_CATEGORIES } from "../services/api";
@@ -29,39 +29,44 @@ export function InventoryForm({
   backUrl,
 }: InventoryFormProps) {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<AddEditItemForm>({
-    name: "",
-    description: "",
-    quantity: 0,
-    price: 0,
-    threshold: 0,
-    category: "",
-  });
 
-  // Track input values as strings to allow clearing
-  const [inputValues, setInputValues] = useState({
-    quantity: "0",
-    price: "0",
-    threshold: "0",
-  });
-
-  useEffect(() => {
+  // Initialize form data directly from props (no useEffect needed)
+  const [formData, setFormData] = useState<AddEditItemForm>(() => {
     if (item && mode === "edit") {
-      setFormData({
+      return {
         name: item.name,
         description: item.description,
         quantity: item.quantity,
         price: item.price,
         threshold: item.threshold,
         category: item.category,
-      });
-      setInputValues({
+      };
+    }
+    return {
+      name: "",
+      description: "",
+      quantity: 0,
+      price: 0,
+      threshold: 0,
+      category: "",
+    };
+  });
+
+  // Initialize input values directly from props (no useEffect needed)
+  const [inputValues, setInputValues] = useState(() => {
+    if (item && mode === "edit") {
+      return {
         quantity: item.quantity.toString(),
         price: item.price.toString(),
         threshold: item.threshold.toString(),
-      });
+      };
     }
-  }, [item, mode]);
+    return {
+      quantity: "0",
+      price: "0",
+      threshold: "0",
+    };
+  });
 
   const handleInputChange = (
     field: keyof AddEditItemForm,
