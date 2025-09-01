@@ -46,7 +46,7 @@ export function LoginForm() {
         {/* Footer */}
         <div className="p-6 border-t border-gray-700">
           <p className="text-xs text-gray-400 text-center">
-            © 2024 Inventory MS. All rights reserved.
+            © 2025 Inventory MS. All rights reserved.
           </p>
         </div>
       </div>

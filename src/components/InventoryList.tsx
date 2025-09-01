@@ -220,11 +220,11 @@ export function InventoryList({ items }: InventoryListProps) {
       </div>
 
       {/* Inventory Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {filteredAndSortedItems.map((item) => (
           <div
             key={item.id}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+            className="flex flex-col justify-between bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
             onClick={() => navigate(`/inventory/${item.id}`)}
           >
             {/* Item Image */}
