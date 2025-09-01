@@ -1,6 +1,5 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useInventoryItems } from "../hooks/useInventory";
 import { INVENTORY_CATEGORIES, type InventoryItem } from "../services/api";
 import { Select, type SelectOption } from "./ui/Select";
 
@@ -228,9 +227,29 @@ export function InventoryList({ items }: InventoryListProps) {
             className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
             onClick={() => navigate(`/inventory/${item.id}`)}
           >
-            {/* Item Image Placeholder */}
-            <div className="w-full h-48 bg-gray-100 rounded-t-lg flex items-center justify-center">
-              <span className="text-4xl">📦</span>
+            {/* Item Image */}
+            <div className="w-full h-48 bg-gray-100 rounded-t-lg overflow-hidden">
+              {item.image_url ? (
+                <img
+                  src={item.image_url}
+                  alt={item.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback to placeholder if image fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = "none";
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.innerHTML =
+                        '<div class="w-full h-full flex items-center justify-center"><span class="text-4xl">📦</span></div>';
+                    }
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-4xl">📦</span>
+                </div>
+              )}
             </div>
 
             {/* Item Details */}

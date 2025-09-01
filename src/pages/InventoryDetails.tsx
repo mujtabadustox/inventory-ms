@@ -1,11 +1,10 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   useInventoryItem,
   useDeleteInventoryItem,
 } from "../hooks/useInventory";
 import { ConfirmationDialog } from "../components/ConfirmationDialog";
-import type { InventoryItem } from "../services/api";
 import { toast } from "sonner";
 
 export function InventoryDetails() {
@@ -142,8 +141,28 @@ export function InventoryDetails() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 Item Image
               </h2>
-              <div className="w-full h-64 bg-gray-200 rounded-lg flex items-center justify-center">
-                <span className="text-6xl">📦</span>
+              <div className="w-full h-64 bg-gray-200 rounded-lg overflow-hidden">
+                {item.image_url ? (
+                  <img
+                    src={item.image_url}
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to placeholder if image fails to load
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = "none";
+                      const parent = target.parentElement;
+                      if (parent) {
+                        parent.innerHTML =
+                          '<div class="w-full h-full flex items-center justify-center"><span class="text-6xl">📦</span></div>';
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="text-6xl">📦</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -184,6 +203,20 @@ export function InventoryDetails() {
                     Stock
                   </span>
                   <p className="text-gray-900">{item.quantity} units</p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-500">
+                    Low Stock Threshold
+                  </span>
+                  <p className="text-gray-900">{item.threshold} units</p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-500">
+                    Total Value
+                  </span>
+                  <p className="text-gray-900">
+                    ${(item.price * item.quantity).toFixed(2)}
+                  </p>
                 </div>
               </div>
             </div>

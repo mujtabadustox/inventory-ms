@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { InventoryItem } from "../services/api";
 import { INVENTORY_CATEGORIES } from "../services/api";
@@ -12,12 +12,13 @@ interface AddEditItemForm {
   price: number;
   threshold: number;
   category: string;
+  image_url?: string;
 }
 
 interface InventoryFormProps {
   item?: InventoryItem;
   mode: "add" | "edit";
-  onSubmit: (data: AddEditItemForm) => void;
+  onSubmit: (data: FormData | AddEditItemForm) => void;
   isLoading?: boolean;
   backUrl?: string;
 }
@@ -41,6 +42,7 @@ export function InventoryForm({
         price: item.price,
         threshold: item.threshold,
         category: item.category,
+        image_url: item.image_url || "",
       };
     }
     return {
@@ -50,6 +52,7 @@ export function InventoryForm({
       price: 0,
       threshold: 0,
       category: "",
+      image_url: "",
     };
   });
 
@@ -68,6 +71,9 @@ export function InventoryForm({
       threshold: "0",
     };
   });
+
+  // Add image file state
+  const [image, setImage] = useState<File | null>(null);
 
   const handleInputChange = (
     field: keyof AddEditItemForm,
@@ -100,9 +106,18 @@ export function InventoryForm({
     setFormData((prev) => ({ ...prev, category: value }));
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImage(file);
+      // Preview
+      const imageUrl = URL.createObjectURL(file);
+      setFormData((prev) => ({ ...prev, image_url: imageUrl }));
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     // Convert string inputs to numbers for submission
     const submitData = {
       ...formData,
@@ -111,7 +126,21 @@ export function InventoryForm({
       threshold: parseFloat(inputValues.threshold) || 0,
     };
 
-    onSubmit(submitData);
+    if (mode === "add") {
+      // Use FormData for file upload in add mode
+      const data = new FormData();
+      Object.entries(submitData).forEach(([key, value]) => {
+        if (key !== "image_url") data.append(key, value as any);
+      });
+      if (image) {
+        data.append("image", image);
+      }
+      onSubmit(data);
+    } else {
+      // Use regular object for edit mode (no image upload)
+      const { image_url, ...editData } = submitData;
+      onSubmit(editData);
+    }
   };
 
   return (
@@ -191,6 +220,90 @@ export function InventoryForm({
             required
           />
         </div>
+
+        {/* Image Upload Section - Only show in add mode */}
+        {mode === "add" && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Item Image
+            </label>
+            <div className="space-y-4">
+              {/* Image Preview */}
+              {formData.image_url ? (
+                <div className="flex items-center space-x-4">
+                  <img
+                    src={formData.image_url}
+                    alt="Item preview"
+                    className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                  />
+                  <div>
+                    <p className="text-sm text-gray-600">Selected image</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData((prev) => ({ ...prev, image_url: "" }));
+                        setImage(null);
+                      }}
+                      className="text-sm text-red-600 hover:text-red-800"
+                    >
+                      Remove image
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                  <span className="text-4xl text-gray-400">📷</span>
+                  <p className="text-sm text-gray-500 mt-2">
+                    No image selected
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Upload an image file below
+                  </p>
+                </div>
+              )}
+
+              {/* File Upload */}
+              <div>
+                <label
+                  htmlFor="image-upload"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Upload Image File
+                </label>
+                <input
+                  type="file"
+                  id="image-upload"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Supported formats: JPG, PNG, GIF, WebP
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Image Display Section - Only show in edit mode */}
+        {mode === "edit" && item?.image_url && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Current Image
+            </label>
+            <div className="flex items-center space-x-4">
+              <img
+                src={item.image_url}
+                alt="Current item image"
+                className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+              />
+              <div>
+                <p className="text-sm text-gray-600">Current image</p>
+                <p className="text-xs text-gray-500">Image cannot be edited</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>

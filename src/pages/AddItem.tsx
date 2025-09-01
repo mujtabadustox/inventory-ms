@@ -1,23 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { InventoryForm } from "../components/InventoryForm";
-import type { InventoryItem } from "../services/api";
 import {
   useCreateInventoryItem,
   useUpdateInventoryItem,
   useInventoryItem,
 } from "../hooks/useInventory";
-import { toast } from "sonner";
-
-// Define the form interface to match API payload
-interface AddEditItemForm {
-  name: string;
-  description: string;
-  quantity: number;
-  price: number;
-  threshold: number;
-  category: string;
-}
 
 export function AddItem() {
   const navigate = useNavigate();
@@ -27,11 +15,9 @@ export function AddItem() {
   // Use React Query hooks for API operations
   const createItemMutation = useCreateInventoryItem();
   const updateItemMutation = useUpdateInventoryItem();
-  const { data: existingItem, isLoading: isLoadingItem } = useInventoryItem(
-    id || ""
-  );
+  const { data: existingItem } = useInventoryItem(id || "");
 
-  const handleAddItem = async (formData: AddEditItemForm) => {
+  const handleAddItem = async (formData: any) => {
     try {
       if (isEditMode && id) {
         // Update existing item

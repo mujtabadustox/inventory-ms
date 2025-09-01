@@ -27,7 +27,6 @@ export function CreatePurchaseOrder() {
   const [orderItems, setOrderItems] = useState<PurchaseOrderItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string>("");
   const [itemQuantity, setItemQuantity] = useState<string>("1");
-  const [selectedItem, setSelectedItem] = useState<any>(null);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -174,7 +173,7 @@ export function CreatePurchaseOrder() {
   }
 
   return (
-    <div className="p-6 bg-gray-50">
+    <div className="p-2 bg-gray-50">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

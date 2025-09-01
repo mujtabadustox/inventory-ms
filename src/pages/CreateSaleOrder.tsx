@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCreateSaleOrder } from "../hooks/useSaleOrders";
 import { useInventoryItems } from "../hooks/useInventory";
-import { Select, type SelectOption } from "../components/ui/Select";
+import { Select } from "../components/ui/Select";
 import type { CreateSaleOrderRequest } from "../services/api";
 import { toast } from "sonner";
 
@@ -27,8 +27,6 @@ export function CreateSaleOrder() {
 
   const [orderItems, setOrderItems] = useState<SaleOrderItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string>("");
-  const [itemQuantity, setItemQuantity] = useState<number>(1);
-  const [itemPrice, setItemPrice] = useState<number>(0);
 
   // Track input values as strings to allow clearing (like InventoryForm)
   const [inputValues, setInputValues] = useState({
@@ -122,18 +120,6 @@ export function CreateSaleOrder() {
     });
   };
 
-  const handleItemSelection = (itemId: number) => {
-    setSelectedItemId(itemId.toString());
-    // Set the default price to the inventory price when item is selected
-    const selectedItem = inventoryItems.find((item) => item.id === itemId);
-    if (selectedItem) {
-      setInputValues((prev) => ({
-        ...prev,
-        itemSalePrice: selectedItem.price.toString(),
-      }));
-    }
-  };
-
   const handleRemoveItem = (index: number) => {
     setOrderItems((prev) => prev.filter((_, i) => i !== index));
     toast.success("Item removed from order");
@@ -182,11 +168,6 @@ export function CreateSaleOrder() {
     return item ? item.name : "Unknown Item";
   };
 
-  const getItemPrice = (itemId: number) => {
-    const item = inventoryItems.find((invItem) => invItem.id === itemId);
-    return item ? item.price : 0;
-  };
-
   const calculateTotalAmount = () => {
     return orderItems.reduce((total, orderItem) => {
       return total + orderItem.sale_price * orderItem.quantity;
@@ -231,7 +212,7 @@ export function CreateSaleOrder() {
   }
 
   return (
-    <div className="p-6 bg-gray-50">
+    <div className="p-2 bg-gray-50">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

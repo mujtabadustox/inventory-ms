@@ -137,9 +137,7 @@ const Layout = () => {
         <Header />
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-gray-50">
-          {renderPageContent()}
-        </main>
+        <main className="flex-1 overflow-y-auto">{renderPageContent()}</main>
       </div>
     </div>
   );

@@ -1,4 +1,3 @@
-import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   useInventoryItem,
@@ -16,14 +15,7 @@ export function EditInventoryItem() {
   const updateItemMutation = useUpdateInventoryItem();
 
   // Handle form submission
-  const handleSubmit = async (formData: {
-    name: string;
-    description: string;
-    quantity: number;
-    price: number;
-    threshold: number;
-    category: string;
-  }) => {
+  const handleSubmit = async (formData: any) => {
     try {
       await updateItemMutation.mutateAsync({
         id: id!,

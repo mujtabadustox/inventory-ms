@@ -2,7 +2,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 // Import auth utilities
-import { tokenStorage, authService } from "../lib/auth";
+import { authService } from "../lib/auth";
 import { useAuthStore } from "../stores/authStore";
 
 // Generic API client with JWT support
@@ -81,6 +81,52 @@ class ApiClient {
       console.error("API request failed:", error);
       throw error;
     }
+  }
+
+  public async postForm<T>(endpoint: string, formData: FormData): Promise<T> {
+    const url = `${this.baseURL}${endpoint}`;
+    const token = useAuthStore.getState().token;
+    const config: RequestInit = {
+      method: "POST",
+      body: formData,
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    };
+    const response = await fetch(url, config);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const error = new Error(`HTTP error! status: ${response.status}`);
+      (error as any).response = {
+        status: response.status,
+        data: errorData,
+      };
+      throw error;
+    }
+    return response.json();
+  }
+
+  public async putForm<T>(endpoint: string, formData: FormData): Promise<T> {
+    const url = `${this.baseURL}${endpoint}`;
+    const token = useAuthStore.getState().token;
+    const config: RequestInit = {
+      method: "PUT",
+      body: formData,
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    };
+    const response = await fetch(url, config);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const error = new Error(`HTTP error! status: ${response.status}`);
+      (error as any).response = {
+        status: response.status,
+        data: errorData,
+      };
+      throw error;
+    }
+    return response.json();
   }
 
   async get<T>(endpoint: string): Promise<T> {
@@ -214,6 +260,7 @@ export interface InventoryItem {
   price: number;
   threshold: number;
   category: string;
+  image_url?: string;
 }
 
 // Purchase Order types
@@ -370,6 +417,7 @@ export interface CreateInventoryItemRequest {
   price: number;
   threshold: number;
   category: string;
+  image_url?: string;
 }
 
 export interface UpdateInventoryItemRequest {
@@ -379,6 +427,7 @@ export interface UpdateInventoryItemRequest {
   price?: number;
   threshold?: number;
   category?: string;
+  image_url?: string;
 }
 
 // Example API functions
@@ -405,16 +454,22 @@ export const inventoryApi = {
 
   // Create a new inventory item
   createItem: async (
-    data: CreateInventoryItemRequest
+    data: any // Accept FormData or object
   ): Promise<InventoryItem> => {
+    if (data instanceof FormData) {
+      return apiClient.postForm<InventoryItem>("/inventory/", data);
+    }
     return apiClient.post<InventoryItem>("/inventory/", data);
   },
 
   // Update an inventory item
   updateItem: async (
     item_id: string,
-    data: UpdateInventoryItemRequest
+    data: any // Accept FormData or object
   ): Promise<InventoryItem> => {
+    if (data instanceof FormData) {
+      return apiClient.putForm<InventoryItem>(`/inventory/${item_id}`, data);
+    }
     return apiClient.put<InventoryItem>(`/inventory/${item_id}`, data);
   },
 
