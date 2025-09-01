@@ -258,7 +258,7 @@ export function InventoryList({ items }: InventoryListProps) {
                 <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
                   {item.name}
                 </h3>
-                <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                <span className="text-sm text-gray-500 bg-gray-100 min-w-max px-2 py-1 rounded-full line-clamp-1">
                   {item.category}
                 </span>
               </div>
